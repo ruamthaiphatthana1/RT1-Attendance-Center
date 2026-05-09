@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RT1 Smart Gallery</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700;900&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    *{
+      font-family: 'Noto Sans Thai', sans-serif;
+    }
+
+    body{
+      background: linear-gradient(to bottom,#faf5ff,#ffffff,#f5f3ff);
+    }
+
+    .glass{
+      background: rgba(255,255,255,.7);
+      backdrop-filter: blur(18px);
+    }
+
+    .modal{
+      display:none;
+    }
+
+    .modal.active{
+      display:flex;
+    }
+  </style>
+</head>
+
+<body class="text-slate-700">
+
+  <!-- ========================= -->
+  <!-- CONFIG -->
+  <!-- ========================= -->
+
+  <script>
+    const API_URL = "PUT_YOUR_APPS_SCRIPT_URL_HERE";
+  </script>
+
+  <!-- ========================= -->
+  <!-- NAVBAR -->
+  <!-- ========================= -->
+
+  <nav class="sticky top-0 z-50 border-b border-violet-100 bg-white/80 backdrop-blur-xl">
+
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+
+      <div class="flex items-center gap-4">
+
+        <img
+          id="logoImage"
+          src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg"
+          class="h-14 w-14 rounded-full border-4 border-violet-100 object-cover shadow-lg"
+        >
+
+        <div>
+          <h1 class="text-2xl font-black text-violet-700">
+            RT1 Smart Gallery
+          </h1>
+
+          <p class="text-xs text-slate-500">
+            คลังภาพโรงเรียนรวมไทยพัฒนา 1
+          </p>
+        </div>
+      </div>
+
+      <button
+        onclick="openLogin()"
+        class="rounded-full bg-violet-500 px-5 py-2 font-semibold text-white"
+      >
+        Admin
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ========================= -->
+  <!-- HERO -->
+  <!-- ========================= -->
+
+  <section class="relative overflow-hidden">
+
+    <div
+      id="heroBackground"
+      class="absolute inset-0 bg-cover bg-center opacity-20"
+      style="background-image:url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1600&auto=format&fit=crop')"
+    ></div>
+
+    <div class="relative mx-auto max-w-7xl px-6 py-28 text-center">
+
+      <div class="glass rounded-[2rem] border border-white/50 p-12 shadow-2xl">
+
+        <p class="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-500">
+          RT1 DIGITAL MEMORY
+        </p>
+
+        <h1 class="text-5xl font-black text-slate-800 md:text-7xl">
+          RT1 Smart Gallery
+        </h1>
+
+        <p class="mt-5 text-xl text-slate-600">
+          คลังภาพโรงเรียนรวมไทยพัฒนา 1
+        </p>
+
+        <p class="mt-4 italic text-slate-500">
+          “บันทึกทุกความทรงจำของชาว RT1”
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= -->
+  <!-- SEARCH -->
+  <!-- ========================= -->
+
+  <section class="mx-auto max-w-6xl px-6 py-10">
+
+    <div class="glass rounded-[2rem] border border-slate-200 p-6 shadow-lg">
+
+      <h2 class="mb-4 text-2xl font-black text-slate-800">
+        🔍 ค้นหาอัลบั้ม
+      </h2>
+
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="ค้นหากิจกรรม..."
+        class="w-full rounded-2xl border border-slate-200 px-5 py-4 outline-none focus:ring-4 focus:ring-violet-100"
+      >
+
+    </div>
+  </section>
+
+  <!-- ========================= -->
+  <!-- CATEGORY -->
+  <!-- ========================= -->
+
+  <section class="mx-auto max-w-7xl px-6 py-6">
+
+    <div class="mb-8">
+
+      <h2 class="text-3xl font-black text-slate-800">
+        📂 หมวดหมู่กิจกรรม
+      </h2>
+
+      <p class="mt-2 text-slate-500">
+        เลือกชมตามประเภทกิจกรรม
+      </p>
+
+    </div>
+
+    <div
+      id="categoryContainer"
+      class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+    ></div>
+
+  </section>
+
+  <!-- ========================= -->
+  <!-- GALLERY -->
+  <!-- ========================= -->
+
+  <section class="mx-auto max-w-7xl px-6 py-12">
+
+    <div class="mb-8">
+
+      <h2 class="text-3xl font-black text-slate-800">
+        🖼️ อัลบั้มล่าสุด
+      </h2>
+
+      <p class="mt-2 text-slate-500">
+        รวมกิจกรรมและความทรงจำของชาว RT1
+      </p>
+
+    </div>
+
+    <div
+      id="albumContainer"
+      class="grid gap-8 md:grid-cols-2 xl:grid-cols-3"
+    ></div>
+
+  </section>
+
+  <!-- ========================= -->
+  <!-- VIEWER -->
+  <!-- ========================= -->
+
+  <div
+    id="viewerModal"
+    class="modal fixed inset-0 z-50 items-center justify-center bg-black/70 p-6"
+  >
+
+    <div class="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+
+      <div class="mb-6 flex items-center justify-between">
+
+        <h2
+          id="viewerTitle"
+          class="text-3xl font-black text-slate-800"
+        >
+          Album
+        </h2>
+
+        <button
+          onclick="closeViewer()"
+          class="rounded-2xl bg-red-500 px-5 py-2 text-white"
+        >
+          ปิด
+        </button>
+
+      </div>
+
+      <div
+        id="viewerImages"
+        class="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+      ></div>
+
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- LOGIN -->
+  <!-- ========================= -->
+
+  <div
+    id="loginModal"
+    class="modal fixed inset-0 z-50 items-center justify-center bg-black/50 p-4"
+  >
+
+    <div class="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl">
+
+      <h2 class="mb-6 text-center text-3xl font-black text-violet-700">
+        🔐 Admin Login
+      </h2>
+
+      <div class="space-y-4">
+
+        <input
+          id="username"
+          type="text"
+          placeholder="Username"
+          class="w-full rounded-2xl border border-slate-200 px-4 py-3"
+        >
+
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          class="w-full rounded-2xl border border-slate-200 px-4 py-3"
+        >
+
+        <button
+          onclick="login()"
+          class="w-full rounded-2xl bg-violet-500 py-3 font-bold text-white"
+        >
+          Login
+        </button>
+
+        <button
+          onclick="closeLogin()"
+          class="w-full rounded-2xl border border-slate-200 py-3"
+        >
+          ปิด
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- ADMIN -->
+  <!-- ========================= -->
+
+  <section
+    id="adminPanel"
+    class="mx-auto hidden max-w-7xl px-6 py-10"
+  >
+
+    <div class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+
+      <div class="mb-8 flex items-center justify-between">
+
+        <h2 class="text-3xl font-black text-slate-800">
+          ⚙️ ระบบจัดการหลังบ้าน
+        </h2>
+
+        <button
+          onclick="logout()"
+          class="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white"
+        >
+          Logout
+        </button>
+
+      </div>
+
+      <div class="grid gap-8 lg:grid-cols-2">
+
+        <!-- CREATE ALBUM -->
+
+        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+
+          <h3 class="mb-5 text-xl font-bold text-slate-800">
+            ➕ เพิ่มอัลบั้ม
+          </h3>
+
+          <div class="space-y-4">
+
+            <input
+              id="albumTitle"
+              type="text"
+              placeholder="ชื่อกิจกรรม"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-3"
+            >
+
+            <textarea
+              id="albumDetail"
+              placeholder="รายละเอียด"
+              class="h-32 w-full rounded-2xl border border-slate-200 px-4 py-3"
+            ></textarea>
+
+            <input
+              id="albumDate"
+              type="date"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-3"
+            >
+
+            <select
+              id="albumCategory"
+              class="w-full rounded-2xl border border-slate-200 px-4 py-3"
+            ></select>
+
+            <input
+              id="albumImages"
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              class="w-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6"
+            >
+
+            <button
+              onclick="createAlbum()"
+              class="w-full rounded-2xl bg-violet-500 py-3 font-bold text-white"
+            >
+              เพิ่มอัลบั้ม
+            </button>
+
+          </div>
+        </div>
+
+        <!-- CATEGORY -->
+
+        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+
+          <h3 class="mb-5 text-xl font-bold text-slate-800">
+            📂 จัดการหมวดหมู่
+          </h3>
+
+          <div class="mb-4 flex gap-2">
+
+            <input
+              id="newCategory"
+              type="text"
+              placeholder="เพิ่มหมวดหมู่"
+              class="flex-1 rounded-2xl border border-slate-200 px-4 py-3"
+            >
+
+            <button
+              onclick="createCategory()"
+              class="rounded-2xl bg-violet-500 px-5 text-white"
+            >
+              เพิ่ม
+            </button>
+
+          </div>
+
+          <div id="categoryManageContainer" class="space-y-2"></div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= -->
+  <!-- FOOTER -->
+  <!-- ========================= -->
+
+  <footer class="mt-20 border-t border-violet-100 bg-white">
+
+    <div class="mx-auto max-w-7xl px-6 py-14 text-center">
+
+      <h3 class="text-3xl font-black text-violet-700">
+        RT1 Smart Gallery
+      </h3>
+
+      <p class="mt-3 text-slate-500">
+        คลังภาพโรงเรียนรวมไทยพัฒนา 1
+      </p>
+
+      <p class="mt-2 italic text-slate-400">
+        “บันทึกทุกความทรงจำของชาว RT1”
+      </p>
+
+    </div>
+  </footer>
+
+  <!-- ========================= -->
+  <!-- SCRIPT -->
+  <!-- ========================= -->
+
+  <script>
+
+    let albums = [];
+    let categories = [];
+
+    window.onload = async () => {
+
+      document.getElementById("albumDate").valueAsDate = new Date();
+
+      await loadCategories();
+      await loadAlbums();
+
+      document
+        .getElementById("searchInput")
+        .addEventListener("input",searchAlbums);
+    };
+
+    async function apiGet(action, params = "") {
+
+      const res = await fetch(
+        `${API_URL}?action=${action}${params}`
+      );
+
+      return await res.json();
+    }
+
+    async function apiPost(data) {
+
+      const res = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify(data)
+      });
+
+      return await res.json();
+    }
+
+    async function loadAlbums(){
+
+      const result = await apiGet("getAlbums");
+
+      if(result.success){
+
+        albums = result.data;
+
+        renderAlbums(albums);
+      }
+    }
+
+    function renderAlbums(data){
+
+      const container =
+        document.getElementById("albumContainer");
+
+      container.innerHTML = "";
+
+      data.forEach(album=>{
+
+        container.innerHTML += `
+          <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-2xl">
+
+            <img
+              src="${album.cover}"
+              class="h-72 w-full object-cover"
+            >
+
+            <div class="p-6">
+
+              <div class="mb-3 inline-block rounded-full bg-violet-100 px-4 py-1 text-sm font-semibold text-violet-700">
+                ${album.category}
+              </div>
+
+              <h3 class="text-2xl font-bold text-slate-800">
+                ${album.title}
+              </h3>
+
+              <p class="mt-3 text-sm text-slate-500">
+                📅 ${album.date}
+              </p>
+
+              <button
+                onclick="openAlbum('${album.id}','${album.title}')"
+                class="mt-6 w-full rounded-2xl bg-violet-500 py-3 font-semibold text-white"
+              >
+                เปิดอัลบั้ม
+              </button>
+
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    async function openAlbum(albumId,title){
+
+      document
+        .getElementById("viewerModal")
+        .classList.add("active");
+
+      document
+        .getElementById("viewerTitle")
+        .innerText = title;
+
+      const result = await apiGet(
+        "getPhotos",
+        `&albumId=${albumId}`
+      );
+
+      const container =
+        document.getElementById("viewerImages");
+
+      container.innerHTML = "";
+
+      result.data.forEach(photo=>{
+
+        if(photo.type === "video"){
+
+          container.innerHTML += `
+            <video controls class="w-full rounded-3xl shadow-lg">
+              <source src="${photo.fileUrl}">
+            </video>
+          `;
+
+        }else{
+
+          container.innerHTML += `
+            <img
+              src="${photo.fileUrl}"
+              class="w-full rounded-3xl shadow-lg"
+            >
+          `;
+        }
+      });
+    }
+
+    function closeViewer(){
+
+      document
+        .getElementById("viewerModal")
+        .classList.remove("active");
+    }
+
+    function searchAlbums(e){
+
+      const keyword =
+        e.target.value.toLowerCase();
+
+      const filtered =
+        albums.filter(album=>
+          album.title.toLowerCase().includes(keyword)
+        );
+
+      renderAlbums(filtered);
+    }
+
+    async function loadCategories(){
+
+      const result =
+        await apiGet("getCategories");
+
+      if(result.success){
+
+        categories = result.data;
+
+        renderCategories();
+        renderCategoryOptions();
+        renderCategoryManage();
+      }
+    }
+
+    function renderCategories(){
+
+      const container =
+        document.getElementById("categoryContainer");
+
+      container.innerHTML = "";
+
+      categories.forEach(category=>{
+
+        container.innerHTML += `
+          <div class="rounded-3xl border border-violet-100 bg-white p-5 text-center font-semibold shadow-sm">
+            ${category.name}
+          </div>
+        `;
+      });
+    }
+
+    function renderCategoryOptions(){
+
+      const select =
+        document.getElementById("albumCategory");
+
+      select.innerHTML = "";
+
+      categories.forEach(category=>{
+
+        select.innerHTML += `
+          <option value="${category.name}">
+            ${category.name}
+          </option>
+        `;
+      });
+    }
+
+    function renderCategoryManage(){
+
+      const container =
+        document.getElementById("categoryManageContainer");
+
+      container.innerHTML = "";
+
+      categories.forEach(category=>{
+
+        container.innerHTML += `
+          <div class="flex items-center justify-between rounded-2xl bg-white px-4 py-3">
+
+            <span>${category.name}</span>
+
+            <button
+              onclick="deleteCategory('${category.id}')"
+              class="rounded-xl bg-red-500 px-3 py-1 text-sm text-white"
+            >
+              ลบ
+            </button>
+
+          </div>
+        `;
+      });
+    }
+
+    async function createCategory(){
+
+      const input =
+        document.getElementById("newCategory");
+
+      if(!input.value) return;
+
+      await apiPost({
+        action:"createCategory",
+        name:input.value
+      });
+
+      input.value = "";
+
+      loadCategories();
+    }
+
+    async function deleteCategory(id){
+
+      await apiPost({
+        action:"deleteCategory",
+        id
+      });
+
+      loadCategories();
+    }
+
+    async function createAlbum(){
+
+      const title =
+        document.getElementById("albumTitle").value;
+
+      const detail =
+        document.getElementById("albumDetail").value;
+
+      const date =
+        document.getElementById("albumDate").value;
+
+      const category =
+        document.getElementById("albumCategory").value;
+
+      const files =
+        document.getElementById("albumImages").files;
+
+      if(!title || files.length === 0){
+
+        alert("กรุณากรอกข้อมูล");
+
+        return;
+      }
+
+      if(files.length > 100){
+
+        alert("อัปโหลดได้สูงสุด 100 ไฟล์");
+
+        return;
+      }
+
+      const images = [];
+
+      for(let file of files){
+
+        const base64 =
+          await toBase64(file);
+
+        images.push(base64);
+      }
+
+      const result = await apiPost({
+        action:"createAlbum",
+        title,
+        detail,
+        date,
+        category,
+        images
+      });
+
+      if(result.success){
+
+        alert("เพิ่มอัลบั้มสำเร็จ");
+
+        document.getElementById("albumTitle").value = "";
+        document.getElementById("albumDetail").value = "";
+        document.getElementById("albumImages").value = "";
+
+        loadAlbums();
+      }
+    }
+
+    function toBase64(file){
+
+      return new Promise(resolve=>{
+
+        const reader = new FileReader();
+
+        reader.readAsDataURL(file);
+
+        reader.onload = ()=>{
+          resolve(reader.result);
+        };
+      });
+    }
+
+    function openLogin(){
+
+      document
+        .getElementById("loginModal")
+        .classList.add("active");
+    }
+
+    function closeLogin(){
+
+      document
+        .getElementById("loginModal")
+        .classList.remove("active");
+    }
+
+    function login(){
+
+      const username =
+        document.getElementById("username").value;
+
+      const password =
+        document.getElementById("password").value;
+
+      if(
+        username === "admin" &&
+        password === "admin"
+      ){
+
+        localStorage.setItem(
+          "rt1_admin",
+          "true"
+        );
+
+        document
+          .getElementById("adminPanel")
+          .classList.remove("hidden");
+
+        closeLogin();
+
+        return;
+      }
+
+      alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    }
+
+    function logout(){
+
+      localStorage.removeItem("rt1_admin");
+
+      document
+        .getElementById("adminPanel")
+        .classList.add("hidden");
+    }
+
+    if(localStorage.getItem("rt1_admin")){
+
+      document.addEventListener(
+        "DOMContentLoaded",
+        ()=>{
+
+          document
+            .getElementById("adminPanel")
+            .classList.remove("hidden");
+        }
+      );
+    }
+
+  </script>
+
+</body>
+</html>
