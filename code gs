@@ -1,0 +1,1446 @@
+const SHEET_STATS = "สถิตินักเรียนทั้งหมด";
+const SHEET_ATTENDANCE = "บันทึกการมาเรียน";
+const TIMEZONE = "Asia/Bangkok";
+
+
+//------------------ API
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+
+  if (action === "saveAttendance") {
+    const result = submitAttendanceData(
+      data.date,
+      data.grade,
+      data.totalMale,
+      data.totalFemale,
+      data.maleAttend,
+      data.femaleAttend
+    );
+
+    return jsonResponse({
+      success: true,
+      message: result
+    });
+  }
+
+  return jsonResponse({
+    success: false,
+    message: "ไม่พบ action ที่ต้องการ"
+  });
+}
+
+function jsonResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+
+// =========================
+// เปิดหน้าเว็บ
+// =========================
+
+function doGet(e) {
+  const page = e && e.parameter && e.parameter.page
+    ? e.parameter.page
+    : "index";
+
+  if (page === "check") {
+    return HtmlService
+      .createTemplateFromFile("check_missing")
+      .evaluate()
+      .setTitle("ตรวจสอบการบันทึก")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
+  if (page === "admin") {
+    return HtmlService
+      .createTemplateFromFile("admin")
+      .evaluate()
+      .setTitle("ตั้งค่าระบบ")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
+  if (page === "search") {
+  return HtmlService
+    .createTemplateFromFile("search")
+    .evaluate()
+    .setTitle("สรุปรายงานการมาเรียน")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
+  return HtmlService
+    .createTemplateFromFile("index")
+    .evaluate()
+    .setTitle("ระบบบันทึกการมาเรียน")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
+
+
+// =========================
+// บันทึกข้อมูลจาก index
+// =========================
+function submitAttendanceData(
+
+  date,
+  grade,
+  totalMale,
+  totalFemale,
+  maleAttend,
+  femaleAttend
+
+) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheetStats =
+    ss.getSheetByName(SHEET_STATS);
+
+  const sheetAttendance =
+    ss.getSheetByName(SHEET_ATTENDANCE);
+
+
+  if (!sheetStats || !sheetAttendance) {
+
+    throw new Error(
+      "ไม่พบชีต สถิตินักเรียนทั้งหมด หรือ บันทึกการมาเรียน"
+    );
+
+  }
+
+
+  totalMale =
+    Number(totalMale) || 0;
+
+  totalFemale =
+    Number(totalFemale) || 0;
+
+  maleAttend =
+    Number(maleAttend) || 0;
+
+  femaleAttend =
+    Number(femaleAttend) || 0;
+
+
+  const totalStudent =
+    totalMale + totalFemale;
+
+  const totalAttend =
+    maleAttend + femaleAttend;
+
+
+  const dateObj =
+    parseDateFromIndex(date);
+
+  const dateKey =
+    formatDateKey(dateObj);
+
+
+  // validate
+  if (!date || !grade) {
+
+    throw new Error(
+      "กรุณากรอกวันที่และระดับชั้น"
+    );
+
+  }
+
+
+  if (maleAttend > totalMale) {
+
+    throw new Error(
+      "จำนวนชายมาเรียนมากกว่าจำนวนชายทั้งหมด"
+    );
+
+  }
+
+
+  if (femaleAttend > totalFemale) {
+
+    throw new Error(
+      "จำนวนหญิงมาเรียนมากกว่าจำนวนหญิงทั้งหมด"
+    );
+
+  }
+
+
+  // อัปเดตสถิตินักเรียนทั้งหมด
+  upsertStudentStats(
+
+    sheetStats,
+    grade,
+    totalMale,
+    totalFemale,
+    totalStudent
+
+  );
+
+
+  // บันทึกการมาเรียน
+  upsertAttendance(
+    sheetAttendance,
+    dateObj,
+    dateKey,
+    grade,
+    totalMale,
+    totalFemale,
+    totalStudent,
+    maleAttend,
+    femaleAttend,
+    totalAttend
+  );
+
+
+  return "บันทึกข้อมูลเรียบร้อยแล้ว";
+
+}
+
+
+
+// =========================
+// อัปเดตชีต สถิตินักเรียนทั้งหมด
+// =========================
+function upsertStudentStats(
+
+  sheet,
+  grade,
+  totalMale,
+  totalFemale,
+  totalStudent
+
+) {
+
+  const lastRow =
+    sheet.getLastRow();
+
+  const data =
+    sheet.getRange(2, 1, lastRow - 1, 5)
+      .getValues();
+
+
+  for (let i = 0; i < data.length; i++) {
+
+    const className =
+      String(data[i][0]).trim();
+
+
+    // ข้ามแถวรวม
+    if (
+      !className ||
+      className.startsWith("รวม")
+    ) {
+
+      continue;
+
+    }
+
+
+    // เจอห้อง
+    if (className === grade) {
+
+      const row = i + 2;
+
+      // B = ชาย
+      sheet.getRange(row, 2)
+        .setValue(totalMale);
+
+      // C = หญิง
+      sheet.getRange(row, 3)
+        .setValue(totalFemale);
+
+      // D = รวม
+      sheet.getRange(row, 4)
+        .setValue(totalStudent);
+
+      return;
+
+    }
+
+  }
+
+
+  throw new Error(
+    `ไม่พบระดับชั้น "${grade}" ในชีตสถิตินักเรียนทั้งหมด`
+  );
+
+}
+
+
+
+// =========================
+// บันทึกชีต การมาเรียน
+// =========================
+function upsertAttendance(
+  sheet,
+  dateObj,
+  dateKey,
+  grade,
+  totalMale,
+  totalFemale,
+  totalStudent,
+  maleAttend,
+  femaleAttend,
+  totalAttend
+) {
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow > 1) {
+    const data = sheet.getRange(2, 1, lastRow - 1, 8).getValues();
+
+    for (let i = data.length - 1; i >= 0; i--) {
+      const rowDate = data[i][0];
+      const rowGrade = data[i][1];
+      const rowDateKey = formatDateKey(parseAnyDate(rowDate));
+
+      if (rowDateKey === dateKey && rowGrade === grade) {
+        sheet.deleteRow(i + 2);
+      }
+    }
+  }
+
+  sheet.appendRow([
+    dateObj,
+    grade,
+    totalMale,
+    totalFemale,
+    totalStudent,
+    maleAttend,
+    femaleAttend,
+    totalAttend
+  ]);
+}
+
+
+
+// =========================
+// parse วันที่จาก index
+// yyyy-mm-dd
+// =========================
+function parseDateFromIndex(dateString) {
+
+  const parts =
+    String(dateString).split("-");
+
+
+  return new Date(
+
+    Number(parts[0]),
+    Number(parts[1]) - 1,
+    Number(parts[2])
+
+  );
+
+}
+
+
+
+// =========================
+// parse วันที่ทั่วไป
+// =========================
+function parseAnyDate(value) {
+
+  if (value instanceof Date) {
+
+    return new Date(
+
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate()
+
+    );
+
+  }
+
+
+  if (typeof value === "string") {
+
+    const text =
+      value.trim();
+
+
+    // yyyy-mm-dd
+    if (text.includes("-")) {
+
+      const parts =
+        text.split("-");
+
+
+      if (parts[0].length === 4) {
+
+        return new Date(
+
+          Number(parts[0]),
+          Number(parts[1]) - 1,
+          Number(parts[2])
+
+        );
+
+      }
+
+    }
+
+
+    // dd/mm/yyyy
+    if (text.includes("/")) {
+
+      const parts =
+        text.split("/");
+
+
+      let year =
+        Number(parts[2]);
+
+
+      // พ.ศ.
+      if (year > 2400) {
+
+        year -= 543;
+
+      }
+
+
+      return new Date(
+
+        year,
+        Number(parts[1]) - 1,
+        Number(parts[0])
+
+      );
+
+    }
+
+  }
+
+
+  return new Date(value);
+
+}
+
+
+
+// =========================
+// format วันที่
+// =========================
+function formatDateKey(dateObj) {
+
+  return Utilities.formatDate(
+
+    dateObj,
+    TIMEZONE,
+    "yyyy-MM-dd"
+
+  );
+
+}
+
+
+
+
+
+//-------------------------------------------------- เช็คบันทึกสถิติ
+
+
+
+const SHEET_TERM = "ตั้งค่าเทอม";
+const SHEET_HOLIDAY = "วันหยุด";
+
+
+// =========================
+// ข้อมูลเริ่มต้นหน้า check
+// =========================
+function getCheckInitialData() {
+  ensureConfigSheets();
+
+  return {
+    classes: getClassListForCheck(),
+    term: getActiveTermInfo()
+  };
+}
+
+
+// =========================
+// ตรวจสอบห้องที่ยังไม่บันทึก
+// =========================
+function checkMissingAttendanceAll(options) {
+  ensureConfigSheets();
+
+  options = options || {};
+
+  const mode = options.mode || "month";
+  const month = options.month || "";
+  const selectedGrade = options.grade || "";
+
+  const term = getActiveTerm();
+
+  if (!term) {
+    throw new Error("ยังไม่ได้ตั้งค่าเทอมที่มีสถานะ 'ใช้งาน'");
+  }
+
+  const today = getTodayOnly();
+
+    let startDate = term.startDate;
+    let endDate = term.endDate || today;
+
+  if (mode === "month") {
+    if (!month) {
+      throw new Error("กรุณาเลือกเดือน");
+    }
+
+    const monthRange = getMonthRange(month);
+
+    startDate = maxDate(startDate, monthRange.start);
+    endDate = minDate(endDate, monthRange.end);
+  }
+
+  if (endDate < startDate) {
+    return {
+      totalClasses: 0,
+      totalSchoolDays: 0,
+      totalRecorded: 0,
+      totalMissing: 0,
+      rows: [],
+      message: "ช่วงวันที่ที่เลือกอยู่นอกช่วงเปิดภาคเรียน"
+    };
+  }
+
+  const holidays = getHolidaySet(startDate, endDate);
+  const schoolDays = getSchoolDays(startDate, endDate, holidays);
+
+  const classes = getClassListForCheck().filter(item => {
+    if (!selectedGrade) return true;
+    return item.grade === selectedGrade;
+  });
+
+  const attendanceMap = getAttendanceMap(startDate, endDate);
+
+  const rows = [];
+
+  let totalRecorded = 0;
+  let totalMissing = 0;
+
+  classes.forEach(cls => {
+    let recordedCount = 0;
+    const missingDates = [];
+
+    schoolDays.forEach(day => {
+      const dateKey = formatDateKey(day);
+      const key = dateKey + "|" + cls.grade;
+
+      if (attendanceMap[key]) {
+        recordedCount++;
+      } else {
+        missingDates.push({
+          dateKey: dateKey,
+          display: formatDateThaiShort(day)
+        });
+      }
+    });
+
+    const missingCount = missingDates.length;
+
+    totalRecorded += recordedCount;
+    totalMissing += missingCount;
+
+    rows.push({
+      grade: cls.grade,
+      teacher: cls.teacher,
+      requiredDays: schoolDays.length,
+      recordedCount: recordedCount,
+      missingCount: missingCount,
+      missingDates: missingDates
+    });
+  });
+
+  return {
+    mode: mode,
+    startDate: formatDateKey(startDate),
+    endDate: formatDateKey(endDate),
+    totalClasses: classes.length,
+    totalSchoolDays: schoolDays.length,
+    totalRecorded: totalRecorded,
+    totalMissing: totalMissing,
+    rows: rows
+  };
+}
+
+
+// =========================
+// สร้างชีตตั้งค่า ถ้ายังไม่มี
+// =========================
+function ensureConfigSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  let termSheet = ss.getSheetByName(SHEET_TERM);
+  if (!termSheet) {
+    termSheet = ss.insertSheet(SHEET_TERM);
+    termSheet.getRange(1, 1, 1, 5).setValues([[
+      "ปีการศึกษา",
+      "ภาคเรียน",
+      "วันที่เปิดเทอม",
+      "วันที่ปิดเทอม",
+      "สถานะ"
+    ]]);
+  }
+
+  let holidaySheet = ss.getSheetByName(SHEET_HOLIDAY);
+  if (!holidaySheet) {
+    holidaySheet = ss.insertSheet(SHEET_HOLIDAY);
+    holidaySheet.getRange(1, 1, 1, 6).setValues([[
+      "วันที่เริ่ม",
+      "วันที่สิ้นสุด",
+      "ประเภท",
+      "รายการ",
+      "หมายเหตุ",
+      "สถานะ"
+    ]]);
+  }
+}
+
+
+// =========================
+// ดึงข้อมูลห้องจาก สถิตินักเรียนทั้งหมด
+// =========================
+function getClassListForCheck() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_STATS);
+
+  if (!sheet) {
+    throw new Error("ไม่พบชีตสถิตินักเรียนทั้งหมด");
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const result = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const grade = String(data[i][0]).trim();
+
+    if (!grade || grade.startsWith("รวม")) {
+      continue;
+    }
+
+    result.push({
+      grade: grade,
+      teacher: data[i][4] || ""
+    });
+  }
+
+  return result;
+}
+
+
+// =========================
+// ดึงเทอมที่ใช้งาน
+// =========================
+function getActiveTerm() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_TERM);
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return null;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+
+  for (let i = 0; i < data.length; i++) {
+    const status = String(data[i][4]).trim();
+
+    if (status === "ใช้งาน") {
+      const startDate = parseAnyDate(data[i][2]);
+      const endDate = data[i][3] ? parseAnyDate(data[i][3]) : null;
+
+      return {
+        year: data[i][0],
+        term: data[i][1],
+        startDate: startDate,
+        endDate: endDate
+      };
+    }
+  }
+
+  return null;
+}
+
+function getActiveTermInfo() {
+  const term = getActiveTerm();
+
+  if (!term) {
+    return null;
+  }
+
+  return {
+    year: term.year,
+    term: term.term,
+    startText: formatDateThaiShort(term.startDate),
+    endText: term.endDate ? formatDateThaiShort(term.endDate) : "ถึงวันนี้"
+  };
+}
+
+
+// =========================
+// ดึงวันหยุด
+// =========================
+function getHolidaySet(startDate, endDate) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_HOLIDAY);
+
+  const holidaySet = new Set();
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return holidaySet;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+
+  data.forEach(row => {
+    const status = String(row[5]).trim();
+
+    if (status !== "ใช้งาน") {
+      return;
+    }
+
+    if (!row[0]) {
+      return;
+    }
+
+    const holidayStart = parseAnyDate(row[0]);
+    const holidayEnd = row[1] ? parseAnyDate(row[1]) : holidayStart;
+
+    let current = maxDate(holidayStart, startDate);
+    const last = minDate(holidayEnd, endDate);
+
+    while (current <= last) {
+      holidaySet.add(formatDateKey(current));
+      current = addDays(current, 1);
+    }
+  });
+
+  return holidaySet;
+}
+
+
+// =========================
+// สร้างรายการวันเรียน
+// ข้ามเสาร์-อาทิตย์ และวันหยุด
+// =========================
+function getSchoolDays(startDate, endDate, holidaySet) {
+  const days = [];
+  let current = new Date(startDate);
+
+  while (current <= endDate) {
+    const day = current.getDay();
+    const dateKey = formatDateKey(current);
+
+    const isWeekend = day === 0 || day === 6;
+    const isHoliday = holidaySet.has(dateKey);
+
+    if (!isWeekend && !isHoliday) {
+      days.push(new Date(current));
+    }
+
+    current = addDays(current, 1);
+  }
+
+  return days;
+}
+
+
+// =========================
+// ดึงข้อมูลที่บันทึกแล้ว
+// ชีต บันทึกการมาเรียน
+// A วันที่
+// B ระดับชั้น
+// C ชายมา
+// D หญิงมา
+// E รวมมา
+// =========================
+function getAttendanceMap(startDate, endDate) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_ATTENDANCE);
+
+  if (!sheet) {
+    throw new Error("ไม่พบชีตบันทึกการมาเรียน");
+  }
+
+  const map = {};
+
+  if (sheet.getLastRow() < 2) {
+    return map;
+    }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+
+  data.forEach(row => {
+    const rawDate = row[0];
+    const grade = row[1];
+
+    if (!rawDate || !grade) {
+      return;
+    }
+
+    const dateObj = parseAnyDate(rawDate);
+
+    if (dateObj < startDate || dateObj > endDate) {
+      return;
+    }
+
+    const dateKey = formatDateKey(dateObj);
+    const key = dateKey + "|" + grade;
+
+    map[key] = true;
+  });
+
+  return map;
+}
+
+
+// =========================
+// ช่วงเดือน
+// รับค่า yyyy-mm
+// =========================
+function getMonthRange(monthText) {
+  const parts = String(monthText).split("-");
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
+
+  return {
+    start: start,
+    end: end
+  };
+}
+
+
+// =========================
+// helper วันที่
+// =========================
+function addDays(dateObj, amount) {
+  const d = new Date(dateObj);
+  d.setDate(d.getDate() + amount);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function getTodayOnly() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function maxDate(a, b) {
+  return a > b ? a : b;
+}
+
+function minDate(a, b) {
+  return a < b ? a : b;
+}
+
+function formatDateThaiShort(dateObj) {
+  const d = dateObj.getDate();
+  const m = dateObj.getMonth() + 1;
+  const y = dateObj.getFullYear() + 543;
+
+  return `${d}/${m}/${y}`;
+}
+
+//---------------------------- แอดมิน
+
+function getAdminSettings() {
+  ensureConfigSheets();
+
+  return {
+    terms: getTermSettings(),
+    holidays: getHolidaySettings()
+  };
+}
+
+function getTermSettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_TERM);
+  const result = [];
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return result;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues();
+
+  data.forEach((row, index) => {
+    result.push({
+      row: index + 2,
+      year: row[0],
+      term: row[1],
+      start: row[2] ? formatDateKey(parseAnyDate(row[2])) : "",
+      end: row[3] ? formatDateKey(parseAnyDate(row[3])) : "",
+      status: row[4] || "รอเปิด"
+    });
+  });
+
+  return result;
+}
+
+function getHolidaySettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_HOLIDAY);
+  const result = [];
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return result;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+
+  data.forEach((row, index) => {
+    result.push({
+      row: index + 2,
+      start: row[0] ? formatDateKey(parseAnyDate(row[0])) : "",
+      end: row[1] ? formatDateKey(parseAnyDate(row[1])) : "",
+      type: row[2] || "",
+      name: row[3] || "",
+      note: row[4] || "",
+      status: row[5] || "ใช้งาน"
+    });
+  });
+
+  return result;
+}
+
+function saveTermSetting(data) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_TERM);
+
+  const year = data.year;
+  const term = data.term;
+  const start = parseAnyDate(data.start);
+  const end = data.end ? parseAnyDate(data.end) : "";
+
+  sheet.appendRow([
+    year,
+    term,
+    start,
+    end,
+    "รอเปิด"
+  ]);
+
+  return true;
+}
+
+function activateTerm(row) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_TERM);
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return true;
+
+  sheet.getRange(2, 5, lastRow - 1, 1).setValue("รอเปิด");
+  sheet.getRange(row, 5).setValue("ใช้งาน");
+
+  return true;
+}
+
+function saveHolidaySetting(data) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_HOLIDAY);
+
+  const start = parseAnyDate(data.start);
+  const end = data.end ? parseAnyDate(data.end) : start;
+
+  sheet.appendRow([
+    start,
+    end,
+    data.type,
+    data.name,
+    data.note || "",
+    "ใช้งาน"
+  ]);
+
+  return true;
+}
+
+function updateHolidayStatus(row, status) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_HOLIDAY);
+
+  sheet.getRange(row, 6).setValue(status);
+
+  return true;
+}
+
+function deleteSettingRow(type, row) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheetName = type === "term"
+    ? SHEET_TERM
+    : SHEET_HOLIDAY;
+
+  const sheet = ss.getSheetByName(sheetName);
+
+  if (!sheet) {
+    throw new Error("ไม่พบชีตที่ต้องการลบข้อมูล");
+  }
+
+  sheet.deleteRow(row);
+
+  return true;
+}
+
+
+//------------ระบบสรุปและส่งออกรายงาน
+
+const REPORT_FOLDER_ID = "16PFrgrRUts9ot3AjKkK7Uh5-Qa0Mh-Sn";
+
+
+
+function buildDailyAttendanceReport(dateObj) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const sheetStats = ss.getSheetByName("สถิตินักเรียนทั้งหมด");
+  const sheetAttendance = ss.getSheetByName("บันทึกการมาเรียน");
+
+  let sheetDaily = ss.getSheetByName("สรุปการมาเรียนรายวัน");
+  if (!sheetDaily) {
+    sheetDaily = ss.insertSheet("สรุปการมาเรียนรายวัน");
+  }
+
+  const dateKey = rptFormatDateKey(dateObj);
+  const classes = rptGetClassList(sheetStats);
+  const attendanceMap = rptGetAttendanceMap(sheetAttendance, dateKey);
+
+  const result = [];
+
+  let grandMaleTotal = 0;
+  let grandFemaleTotal = 0;
+  let grandTotal = 0;
+  let grandMaleAttend = 0;
+  let grandFemaleAttend = 0;
+  let grandAttend = 0;
+  let grandMaleAbsent = 0;
+  let grandFemaleAbsent = 0;
+  let grandAbsent = 0;
+
+  const groups = {
+    "อนุบาล": [],
+    "ประถม": [],
+    "มัธยม": []
+  };
+
+  const groupSum = {
+    "อนุบาล": [0,0,0,0,0,0,0,0,0,""],
+    "ประถม": [0,0,0,0,0,0,0,0,0,""],
+    "มัธยม": [0,0,0,0,0,0,0,0,0,""]
+  };
+
+  classes.forEach(cls => {
+    const attend = attendanceMap[cls.grade] || {
+      totalMale: cls.male,
+      totalFemale: cls.female,
+      totalStudent: cls.total,
+      male: 0,
+      female: 0,
+      total: 0
+    };
+
+    const maleTotal =
+      attend.totalMale;
+
+    const femaleTotal =
+      attend.totalFemale;
+
+    const totalStudent =
+      attend.totalStudent;
+
+    const maleAbsent =
+      Math.max(0, maleTotal - attend.male);
+
+    const femaleAbsent =
+      Math.max(0, femaleTotal - attend.female);
+
+    const totalAbsent =
+      Math.max(0, totalStudent - attend.total);
+
+    const row = [
+      cls.grade,
+      maleTotal,
+      femaleTotal,
+      totalStudent,
+      attend.male,
+      attend.female,
+      attend.total,
+      maleAbsent,
+      femaleAbsent,
+      totalAbsent,
+      cls.teacher
+    ];
+
+    const group = cls.grade.includes("อนุบาล")
+      ? "อนุบาล"
+      : cls.grade.includes("ประถม")
+        ? "ประถม"
+        : "มัธยม";
+
+    groups[group].push(row);
+
+    for (let i = 0; i < 9; i++) {
+      groupSum[group][i] += row[i + 1];
+    }
+
+    grandMaleTotal += maleTotal;
+    grandFemaleTotal += femaleTotal;
+    grandTotal += totalStudent;
+    grandMaleAttend += attend.male;
+    grandFemaleAttend += attend.female;
+    grandAttend += attend.total;
+    grandMaleAbsent += maleAbsent;
+    grandFemaleAbsent += femaleAbsent;
+    grandAbsent += totalAbsent;
+  });
+
+  Object.keys(groups).forEach(group => {
+    result.push(...groups[group]);
+    result.push(["รวมระดับ" + group, ...groupSum[group]]);
+  });
+
+  result.push([
+    "รวมทั้งหมด",
+    grandMaleTotal,
+    grandFemaleTotal,
+    grandTotal,
+    grandMaleAttend,
+    grandFemaleAttend,
+    grandAttend,
+    grandMaleAbsent,
+    grandFemaleAbsent,
+    grandAbsent,
+    ""
+  ]);
+
+  const percent = grandTotal > 0
+    ? ((grandAttend / grandTotal) * 100).toFixed(2)
+    : "0.00";
+
+  const thaiDate = rptThaiDateFull(dateObj);
+
+  sheetDaily.clear();
+
+  sheetDaily.getRange(1, 1, 1, 11).merge();
+  sheetDaily.getRange(1, 1)
+    .setFormula('=IMAGE("https://drive.google.com/uc?export=view&id=1R41aBcyj7bLtuy7DuzB0gdTfNYoNkhe-", 4, 132, 132)')
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle");
+
+  sheetDaily.setRowHeight(1, 132);
+
+  sheetDaily.getRange(2, 1, 1, 11).merge()
+    .setValue("สถิติการมาเรียนของนักเรียนโรงเรียนรวมไทยพัฒนา 1 ภาคเรียนที่ 1 ปีการศึกษา 2568")
+    .setFontWeight("bold")
+    .setFontSize(24)
+    .setFontFamily("Sarabun")
+    .setHorizontalAlignment("center");
+
+  sheetDaily.getRange(3, 1, 1, 11).merge()
+    .setValue(thaiDate)
+    .setFontWeight("bold")
+    .setFontSize(24)
+    .setFontFamily("Sarabun")
+    .setHorizontalAlignment("center");
+
+
+  sheetDaily.getRange(5, 1, 2, 1).merge().setValue("ชั้นเรียน");
+  sheetDaily.getRange(5, 2, 1, 3).merge().setValue("จำนวนนักเรียนทั้งหมด");
+  sheetDaily.getRange(5, 5, 1, 3).merge().setValue("มาเรียน");
+  sheetDaily.getRange(5, 8, 1, 3).merge().setValue("ไม่มาเรียน");
+  sheetDaily.getRange(5, 11, 2, 1).merge().setValue("ครูประจำชั้น");
+
+  sheetDaily.getRange(6, 2, 1, 9).setValues([[
+    "ชาย", "หญิง", "รวม",
+    "ชาย", "หญิง", "รวม",
+    "ชาย", "หญิง", "รวม"
+  ]]);
+
+  const headerRange = sheetDaily.getRange(5, 1, 2, 11);
+  headerRange
+    .setFontSize(18)
+    .setFontFamily("Sarabun")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setBorder(true, true, true, true, true, true);
+
+  const dataRange = sheetDaily.getRange(7, 1, result.length, 11);
+  dataRange
+    .setValues(result)
+    .setFontSize(18)
+    .setFontFamily("Sarabun")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setBorder(true, true, true, true, true, true);
+
+  sheetDaily.getRange(7, 11, result.length, 1).setHorizontalAlignment("left");
+
+  for (let i = 0; i < result.length; i++) {
+    const label = String(result[i][0]);
+    if (label.startsWith("รวมระดับ") || label === "รวมทั้งหมด") {
+      sheetDaily.getRange(i + 7, 1, 1, 11)
+        .setFontWeight("bold")
+        .setBackground("#fff59d");
+    }
+
+    if (result[i][4] === 0 && result[i][5] === 0 && result[i][6] === 0 && !label.startsWith("รวม")) {
+      sheetDaily.getRange(i + 7, 5, 1, 3).setBackground("#ffcccc");
+    }
+  }
+
+  const percentRow = result.length + 8;
+
+  sheetDaily.getRange(percentRow, 6)
+    .setValue("ร้อยละ")
+    .setFontSize(18)
+    .setFontFamily("Sarabun")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setBorder(false, false, false, true, false, false);
+
+  sheetDaily.getRange(percentRow, 7)
+    .setValue(percent)
+    .setFontSize(18)
+    .setFontFamily("Sarabun")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setBorder(false, false, false, false, false, false);
+
+  sheetDaily.setColumnWidth(1, 150);
+  for (let c = 2; c <= 10; c++) {
+    sheetDaily.setColumnWidth(c, 65);
+  }
+  sheetDaily.setColumnWidth(11, 200);
+
+  sheetDaily.setRowHeights(2, percentRow, 25);
+
+  return {
+    thaiDate: thaiDate,
+    percent: percent
+  };
+}
+
+function exportDailyReportPDF(dateObj) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("สรุปการมาเรียนรายวัน");
+
+  const fileId = ss.getId();
+  const sheetId = sheet.getSheetId();
+  const dateKey = rptFormatDateKey(dateObj);
+
+  const exportUrl =
+    "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf" +
+    "&gid=" + sheetId +
+    "&portrait=true" +
+    "&fitw=true" +
+    "&size=A4" +
+    "&top_margin=0.79" +
+    "&bottom_margin=0.79" +
+    "&left_margin=1.18" +
+    "&right_margin=0.79" +
+    "&scale=4" +
+    "&printtitle=false" +
+    "&sheetnames=false" +
+    "&gridlines=false" +
+    "&fzr=false";
+
+  const token = ScriptApp.getOAuthToken();
+
+  const response = UrlFetchApp.fetch(exportUrl, {
+    headers: {
+      Authorization: "Bearer " + token
+    },
+    muteHttpExceptions: true
+  });
+
+  const blob = response.getBlob()
+    .setName("Attendance_Report_" + dateKey + ".pdf");
+
+  const folder = DriveApp.getFolderById(REPORT_FOLDER_ID);
+  const file = folder.createFile(blob);
+
+  try {
+    file.setSharing(
+      DriveApp.Access.ANYONE_WITH_LINK,
+      DriveApp.Permission.VIEW
+    );
+  } catch (e) {
+    Logger.log("ไม่สามารถตั้งค่าแชร์ไฟล์ได้: " + e.message);
+  }
+
+  return file.getUrl();
+}
+
+function rptGetClassList(sheet) {
+  const data = sheet.getDataRange().getValues();
+  const result = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const grade = String(data[i][0]).trim();
+
+    if (!grade || grade.startsWith("รวม")) continue;
+
+    result.push({
+      grade: grade,
+      male: Number(data[i][1]) || 0,
+      female: Number(data[i][2]) || 0,
+      total: Number(data[i][3]) || 0,
+      teacher: data[i][4] || ""
+    });
+  }
+
+  return result;
+}
+
+function rptGetAttendanceMap(sheet, dateKey) {
+  const map = {};
+
+  if (sheet.getLastRow() < 2) return map;
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getValues();
+
+  data.forEach(row => {
+    const rowDate = row[0];
+    const grade = row[1];
+
+    if (!rowDate || !grade) return;
+
+    const rowDateKey = rptFormatDateKey(rptParseAnyDate(rowDate));
+
+    if (rowDateKey === dateKey) {
+      map[grade] = {
+        totalMale: Number(row[2]) || 0,
+        totalFemale: Number(row[3]) || 0,
+        totalStudent: Number(row[4]) || 0,
+        male: Number(row[5]) || 0,
+        female: Number(row[6]) || 0,
+        total: Number(row[7]) || 0
+      };
+    }
+  });
+
+  return map;
+  }
+
+function rptGetDateList(startDate, endDate) {
+  const result = [];
+  let current = new Date(startDate);
+
+  while (current <= endDate) {
+    result.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return result;
+}
+
+function rptParseDate(text) {
+  const parts = String(text).split("-");
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+
+function rptParseAnyDate(value) {
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  if (typeof value === "string") {
+    const text = value.trim();
+
+    if (text.includes("-")) {
+      const parts = text.split("-");
+      if (parts[0].length === 4) {
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      }
+      return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+    }
+
+    if (text.includes("/")) {
+      const parts = text.split("/");
+      let year = Number(parts[2]);
+      if (year > 2400) year -= 543;
+      return new Date(year, Number(parts[1]) - 1, Number(parts[0]));
+    }
+  }
+
+  return new Date(value);
+}
+
+function rptFormatDateKey(dateObj) {
+  return Utilities.formatDate(dateObj, "Asia/Bangkok", "yyyy-MM-dd");
+}
+
+function rptThaiDateFull(dateObj) {
+  const thaiMonths = [
+    "",
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม"
+  ];
+
+  const thaiDays = [
+    "อาทิตย์",
+    "จันทร์",
+    "อังคาร",
+    "พุธ",
+    "พฤหัสบดี",
+    "ศุกร์",
+    "เสาร์"
+  ];
+
+  const dayName = thaiDays[dateObj.getDay()];
+  const day = dateObj.getDate();
+  const month = thaiMonths[dateObj.getMonth() + 1];
+  const year = dateObj.getFullYear() + 543;
+
+  return `วัน${dayName}ที่ ${day} ${month} พ.ศ.${year}`;
+}
+
+function authorizeDrive() {
+  DriveApp.getRootFolder();
+}
+
+function generateAttendanceReportByDate(dateStr) {
+
+  const dateObj =
+    rptParseDate(dateStr);
+
+  const reportData =
+    buildDailyAttendanceReport(dateObj);
+
+  SpreadsheetApp.flush();
+  Utilities.sleep(3000);
+
+  const url =
+    exportDailyReportPDF(dateObj);
+
+  return {
+    files: [{
+      dateText: reportData.thaiDate,
+      percent: reportData.percent,
+      url: url
+    }]
+  };
+
+}
