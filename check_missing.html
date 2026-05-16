@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตรวจสอบการบันทึกการมาเรียน</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: "Sarabun", sans-serif;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(14px);
+    }
+
+    .input {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1px solid #ddd6fe;
+      padding: 0.8rem 1rem;
+      outline: none;
+      background: white;
+    }
+
+    .input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124,58,237,0.12);
+    }
+
+    th, td {
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 p-4">
+
+  <div class="max-w-7xl mx-auto">
+
+    <div class="card rounded-[2rem] shadow-xl p-5 md:p-8">
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-violet-800">
+            ตรวจสอบการบันทึกการมาเรียน
+          </h1>
+          <p class="text-violet-500 mt-1">
+            ตรวจสอบว่าห้องเรียนใดยังไม่ได้บันทึกข้อมูลในแต่ละวัน
+          </p>
+        </div>
+
+        <button
+          onclick="window.open('index.html','_blank')"
+          class="bg-violet-700 text-white px-5 py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition"
+        >
+          กลับไปบันทึกข้อมูล
+        </button>
+
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-4 mb-5">
+
+        <div>
+          <label class="block mb-2 font-semibold text-violet-900">รูปแบบการตรวจ</label>
+          <select id="mode" class="input" onchange="toggleMode()">
+            <option value="month">รายเดือน</option>
+            <option value="term">รายเทอม</option>
+          </select>
+        </div>
+
+        <div id="monthBox">
+          <label class="block mb-2 font-semibold text-violet-900">เลือกเดือน</label>
+          <input type="month" id="month" class="input">
+        </div>
+
+        <div>
+          <label class="block mb-2 font-semibold text-violet-900">ระดับชั้น</label>
+          <select id="grade" class="input">
+            <option value="">ทุกระดับชั้น</option>
+          </select>
+        </div>
+
+        <div class="flex items-end">
+          <button
+            onclick="checkMissing()"
+            class="w-full bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition"
+          >
+            ตรวจสอบ
+          </button>
+        </div>
+
+      </div>
+
+      <div id="termInfo" class="hidden bg-violet-50 border border-violet-100 rounded-2xl p-4 mb-5 text-violet-800"></div>
+
+      <div id="summary" class="grid md:grid-cols-4 gap-4 mb-5"></div>
+
+      <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+        <table class="min-w-full text-sm">
+          <thead class="bg-violet-700 text-white">
+            <tr>
+              <th class="p-3 text-left">ระดับชั้น</th>
+              <th class="p-3 text-left">ครูประจำชั้น</th>
+              <th class="p-3 text-center">วันที่ต้องบันทึก</th>
+              <th class="p-3 text-center">บันทึกแล้ว</th>
+              <th class="p-3 text-center">ยังไม่บันทึก</th>
+              <th class="p-3 text-left">รายการวันที่ยังไม่บันทึก</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            <tr>
+              <td colspan="6" class="p-6 text-center text-gray-400">
+                กรุณาเลือกเงื่อนไขแล้วกดตรวจสอบ
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  const API_URL = "https://script.google.com/macros/s/AKfycbxSbqHXUX-FO_33OuvZ3WdxoRoquZbAouv_si4GDZlgfK5z3QHb_vHMtHK0izFAwLUh/exec";
+
+  window.onload = function() {
+    setDefaultMonth();
+    loadInitialData();
+  };
+
+  function setDefaultMonth() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    document.getElementById("month").value = `${yyyy}-${mm}`;
+  }
+
+  function toggleMode() {
+    const mode = document.getElementById("mode").value;
+    document.getElementById("monthBox").style.display = mode === "month" ? "block" : "none";
+  }
+
+  function loadInitialData() {
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getCheckInitialData"
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+
+      const data = res.data;
+      const gradeSelect = document.getElementById("grade");
+
+      data.classes.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.grade;
+        opt.textContent = item.grade;
+        gradeSelect.appendChild(opt);
+      });
+
+      if (data.term) {
+        document.getElementById("termInfo").classList.remove("hidden");
+        document.getElementById("termInfo").innerHTML =
+          `<b>ภาคเรียนที่ใช้งาน:</b> ${data.term.year}/${data.term.term}
+          <b class="ml-2">ช่วงวันที่:</b> ${data.term.startText} - ${data.term.endText}`;
+      }
+    })
+    .catch(error => {
+      Swal.fire("โหลดข้อมูลไม่สำเร็จ", error.message, "error");
+    });
+  }
+
+  function checkMissing() {
+    const mode = document.getElementById("mode").value;
+    const month = document.getElementById("month").value;
+    const grade = document.getElementById("grade").value;
+
+    Swal.fire({
+      title: "กำลังตรวจสอบ...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "checkMissingAttendanceAll",
+        options: {
+          mode: mode,
+          month: month,
+          grade: grade
+        }
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+
+      Swal.close();
+      renderSummary(res.data);
+      renderTable(res.data);
+    })
+    .catch(error => {
+      Swal.fire("เกิดข้อผิดพลาด", error.message, "error");
+    });
+  }
+
+
+  function renderSummary(res) {
+    document.getElementById("summary").innerHTML = `
+      <div class="bg-white rounded-2xl p-4 shadow text-center">
+        <div class="text-gray-500">จำนวนห้อง</div>
+        <div class="text-3xl font-bold text-violet-700">${res.totalClasses}</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow text-center">
+        <div class="text-gray-500">วันเรียนที่ตรวจ</div>
+        <div class="text-3xl font-bold text-blue-600">${res.totalSchoolDays}</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow text-center">
+        <div class="text-gray-500">บันทึกแล้ว</div>
+        <div class="text-3xl font-bold text-green-600">${res.totalRecorded}</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow text-center">
+        <div class="text-gray-500">ยังไม่บันทึก</div>
+        <div class="text-3xl font-bold text-red-600">${res.totalMissing}</div>
+      </div>
+    `;
+  }
+
+  function renderTable(res) {
+    const body = document.getElementById("resultBody");
+    body.innerHTML = "";
+
+    if (!res.rows || res.rows.length === 0) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="6" class="p-6 text-center text-gray-400">
+            ไม่พบข้อมูล
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    res.rows.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.className = "border-b hover:bg-violet-50";
+
+      const missingButtons = row.missingDates.length === 0
+        ? `<span class="text-green-600 font-bold">ครบแล้ว</span>`
+        : row.missingDates.map(d => {
+            const url = `index.html?date=${d.dateKey}&grade=${encodeURIComponent(row.grade)}`;
+            return `
+              <button
+                onclick="window.open('${url}','_blank')"
+                class="inline-block m-1 px-3 py-1 rounded-full bg-red-100 text-red-700 hover:bg-red-200 font-semibold"
+                title="ไปบันทึกข้อมูล"
+              >
+                ${d.display}
+              </button>
+            `;
+          }).join("");
+
+      tr.innerHTML = `
+        <td class="p-3 font-semibold text-violet-900">${row.grade}</td>
+        <td class="p-3">${row.teacher || "-"}</td>
+        <td class="p-3 text-center">${row.requiredDays}</td>
+        <td class="p-3 text-center text-green-600 font-bold">${row.recordedCount}</td>
+        <td class="p-3 text-center text-red-600 font-bold">${row.missingCount}</td>
+        <td class="p-3">${missingButtons}</td>
+      `;
+
+      body.appendChild(tr);
+    });
+  }
+</script>
+
+</body>
+</html>
