@@ -86,10 +86,10 @@
     </div>
 
 
-    <!-- ตั้งค่าเทอม -->
+    <!-- ตั้งค่าภาคเรียน -->
     <div class="bg-violet-50 rounded-2xl p-5 border border-violet-100 mb-6">
       <h2 class="text-xl font-bold text-violet-800 mb-4">
-        ตั้งค่าเทอม
+        ตั้งค่าภาคเรียน
       </h2>
 
       <div class="grid md:grid-cols-5 gap-4">
@@ -109,14 +109,14 @@
 
         <div>
           <label class="block mb-2 font-semibold text-violet-900">
-            วันที่เปิดเทอม
+            วันเปิดภาคเรียน
           </label>
           <input id="termStart" type="date" class="input">
         </div>
 
         <div>
           <label class="block mb-2 font-semibold text-violet-900">
-            วันที่ปิดเทอม
+            วันปิดภาคเรียน
           </label>
           <input id="termEnd" type="date" class="input">
         </div>
@@ -126,26 +126,26 @@
             onclick="saveTerm()"
             class="w-full bg-violet-700 hover:bg-violet-800 text-white rounded-2xl font-bold py-3 transition"
           >
-            บันทึกเทอม
+            บันทึกภาคเรียน
           </button>
         </div>
       </div>
 
       <p class="text-sm text-violet-500 mt-2">
-        ถ้ายังไม่รู้วันปิดเทอม สามารถเว้นว่างไว้ได้
+        ถ้ายังไม่รู้วันปิดภาคเรียน สามารถเว้นว่างไว้ได้
       </p>
     </div>
 
 
-    <!-- ตารางเทอม -->
+    <!-- ตารางภาคเรียน -->
     <div class="w-full overflow-x-auto rounded-2xl border border-violet-100 bg-white mb-8">
       <table class="min-w-[800px] w-full text-xs sm:text-sm">
         <thead class="bg-violet-700 text-white">
           <tr>
             <th class="p-3">ปีการศึกษา</th>
             <th class="p-3">ภาคเรียน</th>
-            <th class="p-3">เปิดเทอม</th>
-            <th class="p-3">ปิดเทอม</th>
+            <th class="p-3">เปิดภาคเรียน</th>
+            <th class="p-3">ปิดภาคเรียน</th>
             <th class="p-3">สถานะ</th>
             <th class="p-3">จัดการ</th>
           </tr>
@@ -582,7 +582,7 @@
     };
 
     if (!data.year || !data.term || !data.start) {
-      Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกปีการศึกษา ภาคเรียน และวันเปิดเทอม", "warning");
+      Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกปีการศึกษา ภาคเรียน และวันเปิดภาคเรียน", "warning");
       return;
     }
 
@@ -591,7 +591,7 @@
       data: data
     })
     .then(() => {
-      Swal.fire("สำเร็จ", "บันทึกตั้งค่าเทอมแล้ว", "success");
+      Swal.fire("สำเร็จ", "บันทึกตั้งค่าภาคเรียนแล้ว", "success");
       clearTermForm();
       loadAdminData();
     })
@@ -659,7 +659,7 @@
   function deleteTerm(row) {
     Swal.fire({
       title: "ยืนยันการลบ?",
-      text: "ข้อมูลเทอมนี้จะถูกลบออกจากระบบ",
+      text: "ข้อมูลภาคเรียนนี้จะถูกลบออกจากระบบ",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "ลบ",
