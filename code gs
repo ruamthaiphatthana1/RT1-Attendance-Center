@@ -1,41 +1,143 @@
 const SHEET_STATS = "สถิตินักเรียนทั้งหมด";
 const SHEET_ATTENDANCE = "บันทึกการมาเรียน";
+const SHEET_MAKEUP_DAY = "วันเรียนชดเชย";
 const TIMEZONE = "Asia/Bangkok";
-
 
 //------------------ API
 function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const action = data.action;
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
 
-  if (action === "saveAttendance") {
-    const result = submitAttendanceData(
-      data.date,
-      data.grade,
-      data.totalMale,
-      data.totalFemale,
-      data.maleAttend,
-      data.femaleAttend
-    );
+    if (action === "saveAttendance") {
+      const result = submitAttendanceData(
+        data.date,
+        data.grade,
+        data.totalMale,
+        data.totalFemale,
+        data.maleAttend,
+        data.femaleAttend
+      );
+
+      return jsonResponse({
+        success: true,
+        message: result
+      });
+    }
+
+    if (action === "getCheckInitialData") {
+      return jsonResponse({
+        success: true,
+        data: getCheckInitialData()
+      });
+    }
+
+    if (action === "checkMissingAttendanceAll") {
+      return jsonResponse({
+        success: true,
+        data: checkMissingAttendanceAll(data.options)
+      });
+    }
+
+    if (action === "generateAttendanceReportByDate") {
+
+      return jsonResponse({
+        success: true,
+        data: generateAttendanceReportByDate(data.date)
+      });
+
+    }
+
+    if (action === "getAdminSettings") {
+      return jsonResponse({
+        success: true,
+        data: getAdminSettings()
+      });
+    }
+
+    if (action === "saveTermSetting") {
+      return jsonResponse({
+        success: true,
+        data: saveTermSetting(data.data)
+      });
+    }
+
+    if (action === "activateTerm") {
+      return jsonResponse({
+        success: true,
+        data: activateTerm(data.row)
+      });
+    }
+
+    if (action === "saveHolidaySetting") {
+      return jsonResponse({
+        success: true,
+        data: saveHolidaySetting(data.data)
+      });
+    }
+
+    if (action === "updateHolidayStatus") {
+      return jsonResponse({
+        success: true,
+        data: updateHolidayStatus(data.row, data.status)
+      });
+    }
+
+    if (action === "deleteSettingRow") {
+      return jsonResponse({
+        success: true,
+        data: deleteSettingRow(data.type, data.row)
+      });
+    }
+
+
+    if (action === "saveMakeupDaySetting") {
+      return jsonResponse({
+        success: true,
+        data: saveMakeupDaySetting(data.data)
+      });
+    }
+
+    if (action === "updateMakeupDayStatus") {
+      return jsonResponse({
+        success: true,
+        data: updateMakeupDayStatus(data.row, data.status)
+      });
+    }
+
+    if (action === "deleteMakeupDay") {
+      return jsonResponse({
+        success: true,
+        data: deleteMakeupDay(data.row)
+      });
+    }
+
+    if (action === "getAttendanceHistoryForCheck") {
+      return jsonResponse({
+        success: true,
+        data: getAttendanceHistoryForCheck(data.options)
+      });
+    }
 
     return jsonResponse({
-      success: true,
-      message: result
+      success: false,
+      message: "ไม่พบ action ที่ต้องการ: " + action
+    });
+
+  } catch (err) {
+    return jsonResponse({
+      success: false,
+      message: err.message
     });
   }
-
-  return jsonResponse({
-    success: false,
-    message: "ไม่พบ action ที่ต้องการ"
-  });
 }
+
 
 function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
-
 
 
 // =========================
@@ -444,7 +546,7 @@ function formatDateKey(dateObj) {
 
 
 
-const SHEET_TERM = "ตั้งค่าเทอม";
+const SHEET_TERM = "ตั้งค่าภาคเรียน";
 const SHEET_HOLIDAY = "วันหยุด";
 
 
@@ -458,6 +560,7 @@ function getCheckInitialData() {
     classes: getClassListForCheck(),
     term: getActiveTermInfo()
   };
+  
 }
 
 
@@ -476,7 +579,7 @@ function checkMissingAttendanceAll(options) {
   const term = getActiveTerm();
 
   if (!term) {
-    throw new Error("ยังไม่ได้ตั้งค่าเทอมที่มีสถานะ 'ใช้งาน'");
+    throw new Error("ยังไม่ได้ตั้งค่าภาคเรียนที่มีสถานะ 'ใช้งาน'");
   }
 
   const today = getTodayOnly();
@@ -507,7 +610,8 @@ function checkMissingAttendanceAll(options) {
   }
 
   const holidays = getHolidaySet(startDate, endDate);
-  const schoolDays = getSchoolDays(startDate, endDate, holidays);
+  const makeupDays = getMakeupSchoolDaySet(startDate, endDate);
+  const schoolDays = getSchoolDays(startDate, endDate, holidays, makeupDays);
 
   const classes = getClassListForCheck().filter(item => {
     if (!selectedGrade) return true;
@@ -579,8 +683,8 @@ function ensureConfigSheets() {
     termSheet.getRange(1, 1, 1, 5).setValues([[
       "ปีการศึกษา",
       "ภาคเรียน",
-      "วันที่เปิดเทอม",
-      "วันที่ปิดเทอม",
+      "วันที่เปิดภาคเรียน",
+      "วันที่ปิดภาคเรียน",
       "สถานะ"
     ]]);
   }
@@ -592,6 +696,17 @@ function ensureConfigSheets() {
       "วันที่เริ่ม",
       "วันที่สิ้นสุด",
       "ประเภท",
+      "รายการ",
+      "หมายเหตุ",
+      "สถานะ"
+    ]]);
+  }
+
+  let makeupSheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+  if (!makeupSheet) {
+    makeupSheet = ss.insertSheet(SHEET_MAKEUP_DAY);
+    makeupSheet.getRange(1, 1, 1, 4).setValues([[
+      "วันที่",
       "รายการ",
       "หมายเหตุ",
       "สถานะ"
@@ -632,7 +747,7 @@ function getClassListForCheck() {
 
 
 // =========================
-// ดึงเทอมที่ใช้งาน
+// ดึงภาคเรียนที่ใช้งาน
 // =========================
 function getActiveTerm() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -721,11 +836,78 @@ function getHolidaySet(startDate, endDate) {
 }
 
 
+//-----------------ดึงวันเรียนชดเชย
+function saveMakeupDaySetting(data) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+
+  sheet.appendRow([
+    parseAnyDate(data.date),
+    data.name,
+    data.note || "",
+    "ใช้งาน"
+  ]);
+
+  return true;
+}
+
+function updateMakeupDayStatus(row, status) {
+  ensureConfigSheets();
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+
+  sheet.getRange(row, 4).setValue(status);
+
+  return true;
+}
+
+function deleteMakeupDay(row) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+
+  sheet.deleteRow(row);
+
+  return true;
+}
+
+///-----------
+
+function getMakeupSchoolDaySet(startDate, endDate) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+
+  const makeupSet = new Set();
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return makeupSet;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
+
+  data.forEach(row => {
+    const dateRaw = row[0];
+    const status = String(row[3]).trim();
+
+    if (!dateRaw || status !== "ใช้งาน") return;
+
+    const dateObj = parseAnyDate(dateRaw);
+
+    if (dateObj >= startDate && dateObj <= endDate) {
+      makeupSet.add(formatDateKey(dateObj));
+    }
+  });
+
+  return makeupSet;
+}
+
 // =========================
 // สร้างรายการวันเรียน
 // ข้ามเสาร์-อาทิตย์ และวันหยุด
 // =========================
-function getSchoolDays(startDate, endDate, holidaySet) {
+function getSchoolDays(startDate, endDate, holidaySet, makeupSet) {
   const days = [];
   let current = new Date(startDate);
 
@@ -735,8 +917,11 @@ function getSchoolDays(startDate, endDate, holidaySet) {
 
     const isWeekend = day === 0 || day === 6;
     const isHoliday = holidaySet.has(dateKey);
+    const isMakeupDay = makeupSet.has(dateKey);
 
-    if (!isWeekend && !isHoliday) {
+    if (isMakeupDay) {
+      days.push(new Date(current));
+    } else if (!isWeekend && !isHoliday) {
       days.push(new Date(current));
     }
 
@@ -852,8 +1037,33 @@ function getAdminSettings() {
 
   return {
     terms: getTermSettings(),
-    holidays: getHolidaySettings()
+    holidays: getHolidaySettings(),
+    makeupDays: getMakeupDaySettings()
   };
+}
+
+function getMakeupDaySettings() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAKEUP_DAY);
+  const result = [];
+
+  if (!sheet || sheet.getLastRow() < 2) {
+    return result;
+  }
+
+  const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).getValues();
+
+  data.forEach((row, index) => {
+    result.push({
+      row: index + 2,
+      date: row[0] ? formatDateKey(parseAnyDate(row[0])) : "",
+      name: row[1] || "",
+      note: row[2] || "",
+      status: row[3] || "ใช้งาน"
+    });
+  });
+
+  return result;
 }
 
 function getTermSettings() {
@@ -1443,4 +1653,132 @@ function generateAttendanceReportByDate(dateStr) {
     }]
   };
 
+}
+
+
+function getAttendanceHistoryForCheck(options) {
+  const grade = options.grade;
+  const mode = options.mode;
+  const month = options.month;
+
+  if (!grade) {
+    return [];
+  }
+
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName("บันทึกการมาเรียน");
+
+  if (!sh) {
+    return [];
+  }
+
+  const values = sh.getDataRange().getValues();
+  const headers = values.shift();
+
+  const colTimestamp = headers.indexOf("ประทับเวลา");
+  const colDate = headers.indexOf("วันที่");
+  const colGrade = headers.indexOf("ระดับชั้น");
+
+  const colMaleTotal = headers.indexOf("ชาย (ทั้งหมด)");
+  const colFemaleTotal = headers.indexOf("หญิง (ทั้งหมด)");
+
+  const colMaleCome = findHeaderIndex(headers, [
+    "ชายมา",
+    "ชาย (มาเรียน)",
+    "ชายมาเรียน"
+  ]);
+
+  const colFemaleCome = findHeaderIndex(headers, [
+    "หญิงมา",
+    "หญิง (มาเรียน)",
+    "หญิงมาเรียน"
+  ]);
+
+  const colTotalCome = findHeaderIndex(headers, [
+    "รวมมา",
+    "รวมมาเรียน"
+  ]);
+
+  const range = getCheckDateRange_(mode, month);
+
+  return values
+    .filter(row => {
+      const rowGrade = String(row[colGrade] || "").trim();
+      const rowDate = normalizeDate_(row[colDate]);
+
+      return rowGrade === grade &&
+             rowDate >= range.start &&
+             rowDate <= range.end;
+    })
+    .sort((a, b) => normalizeDate_(a[colDate]) > normalizeDate_(b[colDate]) ? 1 : -1)
+    .map(row => {
+      const maleTotal = colMaleTotal >= 0 ? Number(row[colMaleTotal]) || 0 : "";
+      const femaleTotal = colFemaleTotal >= 0 ? Number(row[colFemaleTotal]) || 0 : "";
+
+      const maleCome = colMaleCome >= 0 ? Number(row[colMaleCome]) || 0 : 0;
+      const femaleCome = colFemaleCome >= 0 ? Number(row[colFemaleCome]) || 0 : 0;
+      const totalCome = colTotalCome >= 0 ? Number(row[colTotalCome]) || 0 : maleCome + femaleCome;
+
+      return {
+        dateText: formatDateThai_(row[colDate]),
+        grade: row[colGrade],
+        maleTotal: maleTotal,
+        femaleTotal: femaleTotal,
+        maleCome: maleCome,
+        femaleCome: femaleCome,
+        totalCome: totalCome
+      };
+    });
+}
+
+function findHeaderIndex(headers, names) {
+  for (let i = 0; i < names.length; i++) {
+    const index = headers.indexOf(names[i]);
+    if (index !== -1) return index;
+  }
+  return -1;
+}
+
+function normalizeDate_(value) {
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  }
+
+  return String(value).slice(0, 10);
+}
+
+function formatDateThai_(value) {
+  if (!value) return "";
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "dd/MM/yyyy");
+}
+
+function getCheckDateRange_(mode, month) {
+  if (mode === "month") {
+    const start = month + "-01";
+    const parts = month.split("-");
+    const year = Number(parts[0]);
+    const m = Number(parts[1]);
+
+    const lastDate = new Date(year, m, 0);
+    const end = Utilities.formatDate(lastDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+    return {
+      start: start,
+      end: end
+    };
+  }
+
+  const term = getActiveTermInfo();
+
+  return {
+    start: term.start,
+    end: term.end
+  };
 }
