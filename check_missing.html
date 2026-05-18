@@ -126,6 +126,43 @@
         </table>
       </div>
 
+<div id="historyBox" class="hidden mt-6">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="text-xl font-bold text-violet-800">
+        ประวัติการบันทึกของรายห้อง
+      </h2>
+      <p class="text-sm text-violet-500">
+        แสดงเฉพาะเมื่อเลือกตรวจสอบเป็นรายห้อง
+      </p>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+    <table class="min-w-full text-sm">
+      <thead class="bg-fuchsia-600 text-white">
+        <tr>
+          <th class="p-3 text-left">วันที่</th>
+          <th class="p-3 text-left">ระดับชั้น</th>
+          <th class="p-3 text-center">ชายทั้งหมด</th>
+          <th class="p-3 text-center">หญิงทั้งหมด</th>
+          <th class="p-3 text-center">ชายมา</th>
+          <th class="p-3 text-center">หญิงมา</th>
+          <th class="p-3 text-center">รวมมา</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr>
+          <td colspan="7" class="p-6 text-center text-gray-400">
+            ยังไม่มีข้อมูลประวัติ
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
     </div>
 <footer class="text-center text-[12px] text-violet-400 mt-6 leading-6">
       © 2026 พัฒนาโดย นางสาวธาราธาร สุวรรณคาม | โรงเรียนรวมไทยพัฒนา 1 | สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตาก เขต 2 
@@ -135,7 +172,7 @@
 
 <script>
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbyveDr9wW8Lq02KhjXfQdZfo8-vh9963jz5tmCim5XlhxD9BiR_ieZSBQC-6ZqUdX3_/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyzA2SQ6cfT6cOWhe5yVzT_DlPFPZT5Vb1fbVt0q5rAD0p9ZikXSq8Gbpq6a5GwUprC/exec";
 
   window.onload = function() {
     setDefaultMonth();
@@ -216,6 +253,13 @@
       Swal.close();
       renderSummary(res.data);
       renderTable(res.data);
+
+      if (grade) {
+        loadAttendanceHistory(mode, month, grade);
+      } else {
+        hideAttendanceHistory();
+      }
+
     })
     .catch(error => {
       Swal.fire("เกิดข้อผิดพลาด", error.message, "error");
@@ -293,6 +337,86 @@
       body.appendChild(tr);
     });
   }
+
+function loadAttendanceHistory(mode, month, grade) {
+    const historyBox = document.getElementById("historyBox");
+    const historyBody = document.getElementById("historyBody");
+
+    historyBox.classList.remove("hidden");
+
+    historyBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="p-6 text-center text-gray-400">
+          กำลังโหลดประวัติการบันทึก...
+        </td>
+      </tr>
+    `;
+
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getAttendanceHistoryForCheck",
+        options: {
+          mode: mode,
+          month: month,
+          grade: grade
+        }
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      renderAttendanceHistory(res.data);
+    })
+    .catch(error => {
+      historyBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="p-6 text-center text-red-500">
+            โหลดประวัติไม่สำเร็จ: ${error.message}
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function hideAttendanceHistory() {
+    document.getElementById("historyBox").classList.add("hidden");
+    document.getElementById("historyBody").innerHTML = `
+      <tr>
+        <td colspan="7" class="p-6 text-center text-gray-400">
+          ยังไม่มีข้อมูลประวัติ
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderAttendanceHistory(rows) {
+    const historyBody = document.getElementById("historyBody");
+
+    if (!rows || rows.length === 0) {
+      historyBody.innerHTML = `
+        <tr>
+          <td colspan="7" class="p-6 text-center text-gray-400">
+            ไม่พบประวัติการบันทึกของห้องนี้
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    historyBody.innerHTML = rows.map(row => `
+      <tr class="border-b hover:bg-fuchsia-50">
+        <td class="p-3 font-semibold text-violet-900">${row.dateText}</td>
+        <td class="p-3">${row.grade}</td>
+        <td class="p-3 text-center">${row.maleTotal}</td>
+        <td class="p-3 text-center">${row.femaleTotal}</td>
+        <td class="p-3 text-center text-green-700 font-bold">${row.maleCome}</td>
+        <td class="p-3 text-center text-green-700 font-bold">${row.femaleCome}</td>
+        <td class="p-3 text-center text-blue-700 font-bold">${row.totalCome}</td>
+      </tr>
+    `).join("");
+  }
+  
 </script>
 
 </body>
