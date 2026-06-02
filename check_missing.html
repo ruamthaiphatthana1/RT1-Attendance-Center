@@ -149,12 +149,13 @@
           <th class="p-3 text-center">ชายมา</th>
           <th class="p-3 text-center">หญิงมา</th>
           <th class="p-3 text-center">รวมมา</th>
+          <th class="p-3 text-center">จัดการ</th>
         </tr>
       </thead>
       <tbody id="historyBody">
         <tr>
-          <td colspan="7" class="p-6 text-center text-gray-400">
-            ยังไม่มีข้อมูลประวัติ
+          <td colspan="8" class="p-6 text-center text-gray-400">
+            ไม่พบประวัติการบันทึก
           </td>
         </tr>
       </tbody>
@@ -172,7 +173,7 @@
 
 <script>
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbyzA2SQ6cfT6cOWhe5yVzT_DlPFPZT5Vb1fbVt0q5rAD0p9ZikXSq8Gbpq6a5GwUprC/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbxyU9LX7chpNW2_VBVrt7JU5eywf7sO-MHL2Wv8S0WvkAtD4rbenp5xt9QGMq1Yv1v3/exec";
 
   window.onload = function() {
     setDefaultMonth();
@@ -338,6 +339,71 @@
     });
   }
 
+  function confirmEditAttendance(data, dateText, grade) {
+  const totalStudent = data.maleTotal + data.femaleTotal;
+  const totalCome = data.maleCome + data.femaleCome;
+
+  Swal.fire({
+    title: "",
+    width: 480,
+    padding: "0",
+    background: "transparent",
+    showConfirmButton: false,
+    html: `
+      <div class="bg-white rounded-[28px] overflow-hidden shadow-2xl text-left">
+        <div class="bg-amber-500 text-white px-6 py-5">
+          <div class="text-2xl font-bold">ยืนยันการแก้ไข</div>
+          <div class="text-sm opacity-90 mt-1">${grade} | วันที่ ${dateText}</div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-blue-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-blue-500">ชายทั้งหมด</div>
+              <div class="text-2xl font-bold text-blue-700">${data.maleTotal}</div>
+            </div>
+            <div class="bg-pink-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-pink-500">หญิงทั้งหมด</div>
+              <div class="text-2xl font-bold text-pink-700">${data.femaleTotal}</div>
+            </div>
+            <div class="bg-green-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-green-500">ชายมา</div>
+              <div class="text-2xl font-bold text-green-700">${data.maleCome}</div>
+            </div>
+            <div class="bg-purple-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-purple-500">หญิงมา</div>
+              <div class="text-2xl font-bold text-purple-700">${data.femaleCome}</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gray-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-gray-500">รวมทั้งหมด</div>
+              <div class="text-2xl font-bold text-gray-800">${totalStudent}</div>
+            </div>
+            <div class="bg-violet-50 rounded-2xl p-4 text-center">
+              <div class="text-sm text-violet-500">รวมมา</div>
+              <div class="text-2xl font-bold text-violet-800">${totalCome}</div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="Swal.close()"
+              class="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">
+              ยกเลิก
+            </button>
+
+            <button onclick='submitEditAttendance(${JSON.stringify(data)})'
+              class="flex-1 py-3 rounded-2xl bg-amber-500 text-white font-bold shadow hover:bg-amber-600">
+              ยืนยันบันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  });
+}
+
 function loadAttendanceHistory(mode, month, grade) {
     const historyBox = document.getElementById("historyBox");
     const historyBody = document.getElementById("historyBody");
@@ -346,7 +412,7 @@ function loadAttendanceHistory(mode, month, grade) {
 
     historyBody.innerHTML = `
       <tr>
-        <td colspan="7" class="p-6 text-center text-gray-400">
+        <td colspan="8" class="p-6 text-center text-gray-400">
           กำลังโหลดประวัติการบันทึก...
         </td>
       </tr>
@@ -371,7 +437,7 @@ function loadAttendanceHistory(mode, month, grade) {
     .catch(error => {
       historyBody.innerHTML = `
         <tr>
-          <td colspan="7" class="p-6 text-center text-red-500">
+          <td colspan="8" class="p-6 text-center text-red-500">
             โหลดประวัติไม่สำเร็จ: ${error.message}
           </td>
         </tr>
@@ -383,7 +449,7 @@ function loadAttendanceHistory(mode, month, grade) {
     document.getElementById("historyBox").classList.add("hidden");
     document.getElementById("historyBody").innerHTML = `
       <tr>
-        <td colspan="7" class="p-6 text-center text-gray-400">
+        <td colspan="8" class="p-6 text-center text-gray-400">
           ยังไม่มีข้อมูลประวัติ
         </td>
       </tr>
@@ -396,7 +462,7 @@ function loadAttendanceHistory(mode, month, grade) {
     if (!rows || rows.length === 0) {
       historyBody.innerHTML = `
         <tr>
-          <td colspan="7" class="p-6 text-center text-gray-400">
+          <td colspan="8" class="p-6 text-center text-gray-400">
             ไม่พบประวัติการบันทึกของห้องนี้
           </td>
         </tr>
@@ -413,10 +479,304 @@ function loadAttendanceHistory(mode, month, grade) {
         <td class="p-3 text-center text-green-700 font-bold">${row.maleCome}</td>
         <td class="p-3 text-center text-green-700 font-bold">${row.femaleCome}</td>
         <td class="p-3 text-center text-blue-700 font-bold">${row.totalCome}</td>
+        <td class="p-3 text-center">
+          <div class="flex items-center justify-center gap-2">
+
+            <button
+              onclick="openEditAttendance(
+                '${row.recordId}',
+                '${row.dateText}',
+                '${row.grade}',
+                ${row.maleTotal},
+                ${row.femaleTotal},
+                ${row.maleCome},
+                ${row.femaleCome}
+              )"
+              class="w-9 h-9 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition flex items-center justify-center"
+              title="แก้ไขข้อมูล"
+            >
+              ✏️
+            </button>
+
+            <button
+              onclick="confirmDeleteAttendance(
+                '${row.recordId}',
+                '${row.dateText}',
+                '${row.grade}'
+              )"
+              class="w-9 h-9 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition flex items-center justify-center"
+              title="ลบข้อมูล"
+            >
+              🗑️
+            </button>
+
+          </div>
+        </td>
       </tr>
     `).join("");
   }
   
+function openEditAttendance(recordId, dateText, grade, maleTotal, femaleTotal, maleCome, femaleCome) {
+  Swal.fire({
+    title: "",
+    width: 520,
+    padding: "0",
+    background: "transparent",
+    showConfirmButton: false,
+    showCancelButton: false,
+    html: `
+      <div class="bg-white rounded-[28px] overflow-hidden shadow-2xl text-left">
+        
+        <div class="bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white px-6 py-5">
+          <div class="text-2xl font-bold">✏️ แก้ไขข้อมูลการมาเรียน</div>
+          <div class="text-sm opacity-90 mt-1">
+            ${grade} | วันที่ ${dateText}
+          </div>
+        </div>
+
+        <div class="p-6 space-y-5">
+
+          <div class="bg-violet-50 border border-violet-100 rounded-2xl p-4">
+            <div class="text-violet-800 font-bold mb-3">จำนวนนักเรียนทั้งหมด</div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">ชายทั้งหมด</label>
+                <input id="editMaleTotal" type="number" value="${maleTotal}"
+                  class="w-full rounded-2xl border border-violet-200 px-4 py-3 text-center text-lg font-bold focus:outline-none focus:ring-4 focus:ring-violet-100">
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">หญิงทั้งหมด</label>
+                <input id="editFemaleTotal" type="number" value="${femaleTotal}"
+                  class="w-full rounded-2xl border border-violet-200 px-4 py-3 text-center text-lg font-bold focus:outline-none focus:ring-4 focus:ring-violet-100">
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-fuchsia-50 border border-fuchsia-100 rounded-2xl p-4">
+            <div class="text-fuchsia-800 font-bold mb-3">จำนวนมาเรียน</div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">ชายมา</label>
+                <input id="editMaleCome" type="number" value="${maleCome}"
+                  class="w-full rounded-2xl border border-fuchsia-200 px-4 py-3 text-center text-lg font-bold focus:outline-none focus:ring-4 focus:ring-fuchsia-100">
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">หญิงมา</label>
+                <input id="editFemaleCome" type="number" value="${femaleCome}"
+                  class="w-full rounded-2xl border border-fuchsia-200 px-4 py-3 text-center text-lg font-bold focus:outline-none focus:ring-4 focus:ring-fuchsia-100">
+              </div>
+            </div>
+          </div>
+
+          <div id="editPreview" class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-blue-50 p-4 text-center">
+              <div class="text-sm text-blue-500">รวมทั้งหมด</div>
+              <div id="previewTotalStudent" class="text-2xl font-bold text-blue-700">0</div>
+            </div>
+
+            <div class="rounded-2xl bg-green-50 p-4 text-center">
+              <div class="text-sm text-green-500">รวมมา</div>
+              <div id="previewTotalCome" class="text-2xl font-bold text-green-700">0</div>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button id="cancelEditBtn"
+              class="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">
+              ยกเลิก
+            </button>
+
+            <button id="saveEditBtn"
+              class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white font-bold shadow hover:scale-[1.02] transition">
+              บันทึก
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `,
+    didOpen: () => {
+      const maleTotalInput = document.getElementById("editMaleTotal");
+      const femaleTotalInput = document.getElementById("editFemaleTotal");
+      const maleComeInput = document.getElementById("editMaleCome");
+      const femaleComeInput = document.getElementById("editFemaleCome");
+
+      function updatePreview() {
+        const mt = Number(maleTotalInput.value) || 0;
+        const ft = Number(femaleTotalInput.value) || 0;
+        const mc = Number(maleComeInput.value) || 0;
+        const fc = Number(femaleComeInput.value) || 0;
+
+        document.getElementById("previewTotalStudent").textContent = mt + ft;
+        document.getElementById("previewTotalCome").textContent = mc + fc;
+      }
+
+      [maleTotalInput, femaleTotalInput, maleComeInput, femaleComeInput].forEach(input => {
+        input.addEventListener("input", updatePreview);
+      });
+
+      updatePreview();
+
+      document.getElementById("cancelEditBtn").onclick = () => {
+        Swal.close();
+      };
+
+      document.getElementById("saveEditBtn").onclick = () => {
+        const data = {
+          recordId: recordId,
+          maleTotal: Number(maleTotalInput.value) || 0,
+          femaleTotal: Number(femaleTotalInput.value) || 0,
+          maleCome: Number(maleComeInput.value) || 0,
+          femaleCome: Number(femaleComeInput.value) || 0
+        };
+
+        if (data.maleCome > data.maleTotal) {
+          Swal.showValidationMessage("ชายมา ต้องไม่มากกว่าชายทั้งหมด");
+          return;
+        }
+
+        if (data.femaleCome > data.femaleTotal) {
+          Swal.showValidationMessage("หญิงมา ต้องไม่มากกว่าหญิงทั้งหมด");
+          return;
+        }
+
+        confirmEditAttendance(data, dateText, grade);
+      };
+    }
+  });
+}
+
+function submitEditAttendance(data) {
+  Swal.fire({
+    title: "กำลังบันทึก...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateAttendanceRecord",
+      data: data
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire({
+      icon: "success",
+      title: "บันทึกสำเร็จ",
+      text: "แก้ไขข้อมูลเรียบร้อยแล้ว",
+      confirmButtonColor: "#7c3aed"
+    }).then(() => {
+      refreshAttendanceHistoryOnly();
+    });
+  })
+  .catch(error => {
+    Swal.fire({
+      icon: "error",
+      title: "บันทึกไม่สำเร็จ",
+      text: error.message,
+      confirmButtonColor: "#7c3aed"
+    });
+  });
+}
+
+function refreshAttendanceHistoryOnly() {
+  const mode = document.getElementById("mode").value;
+  const month = document.getElementById("month").value;
+  const grade = document.getElementById("grade").value;
+
+  if (!grade) return;
+
+  loadAttendanceHistory(mode, month, grade);
+}
+
+function confirmDeleteAttendance(recordId, dateText, grade) {
+  Swal.fire({
+    title: "",
+    width: 460,
+    padding: "0",
+    background: "transparent",
+    showConfirmButton: false,
+    html: `
+      <div class="bg-white rounded-[28px] overflow-hidden shadow-2xl text-left">
+        <div class="bg-red-600 text-white px-6 py-5">
+          <div class="text-2xl font-bold">🗑️ ยืนยันการลบ</div>
+          <div class="text-sm opacity-90 mt-1">${grade} | วันที่ ${dateText}</div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="bg-red-50 border border-red-100 rounded-2xl p-4 text-red-700 text-center font-semibold">
+            ยืนยันลบประวัติการบันทึกใช่หรือไม่?
+          </div>
+
+          <div class="text-sm text-gray-500 text-center">
+            เมื่อลบแล้ว ข้อมูลจะหายจากประวัติบันทึกการมาเรียนทันที
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="Swal.close()"
+              class="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">
+              ยกเลิก
+            </button>
+
+            <button onclick="submitDeleteAttendance('${recordId}')"
+              class="flex-1 py-3 rounded-2xl bg-red-600 text-white font-bold shadow hover:bg-red-700">
+              ยืนยันลบ
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  });
+}
+  
+
+function submitDeleteAttendance(recordId) {
+  Swal.fire({
+    title: "กำลังลบข้อมูล...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "deleteAttendanceRecord",
+      data: {
+        recordId: recordId
+      }
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire({
+      icon: "success",
+      title: "ลบข้อมูลสำเร็จ",
+      text: "ลบประวัติการบันทึกเรียบร้อยแล้ว",
+      confirmButtonColor: "#dc2626"
+    }).then(() => {
+      checkMissing();
+    });
+  })
+  .catch(error => {
+    Swal.fire({
+      icon: "error",
+      title: "ลบไม่สำเร็จ",
+      text: error.message,
+      confirmButtonColor: "#dc2626"
+    });
+  });
+}
+
 </script>
 
 </body>
