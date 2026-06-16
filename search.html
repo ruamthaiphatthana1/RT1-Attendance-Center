@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>สรุปรายงานสถิติการมาเรียน</title>
+  <title>สรุปรายงานการมาเรียน</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -19,15 +19,32 @@
       outline:none;
       background:white;
     }
+    .dashboard-card {
+      border-radius: 1.5rem;
+      padding: 1.25rem;
+      background: white;
+      box-shadow: 0 10px 25px rgba(124,58,237,.08);
+      border: 1px solid #ede9fe;
+    }
+
+    .dashboard-label {
+      color: #6b7280;
+      font-size: .9rem;
+    }
+
+    .dashboard-value {
+      font-size: 2rem;
+      font-weight: 800;
+    }
   </style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 p-4">
 
-<div class="max-w-4xl mx-auto bg-white/95 rounded-[2rem] shadow-xl p-6 md:p-8">
+<div class="max-w-7xl mx-auto bg-white/95 rounded-[2rem] shadow-xl p-6 md:p-8">
 
   <h1 class="text-3xl font-bold text-violet-800">
-    สรุปรายงานสถิติการมาเรียน
+    สรุปรายงานการมาเรียน
   </h1>
 
   <p class="text-violet-500 mt-2 mb-6">
@@ -55,24 +72,98 @@
   </div>
 
   <div id="result" class="mt-6 space-y-3"></div>
-<footer class="text-center text-[12px] text-violet-400 mt-6 leading-6">
-      © 2026 พัฒนาโดย นางสาวธาราธาร สุวรรณคาม | โรงเรียนรวมไทยพัฒนา 1 | สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตาก เขต 2 
-    </footer>
+
+  <div id="dashboardResult" class="hidden mt-6 space-y-5">
+
+    <div class="grid md:grid-cols-4 gap-4">
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">นักเรียนทั้งหมด</div>
+        <div id="sumTotalStudent" class="dashboard-value text-violet-700">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">มาเรียนทั้งหมด</div>
+        <div id="sumTotalAttend" class="dashboard-value text-green-600">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">ขาดเรียนทั้งหมด</div>
+        <div id="sumTotalAbsent" class="dashboard-value text-red-600">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">ร้อยละการมาเรียน</div>
+        <div id="sumPercent" class="dashboard-value text-fuchsia-700">0%</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4">
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">ชายมาเรียน</div>
+        <div id="sumMaleAttend" class="text-2xl font-bold text-blue-700">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">หญิงมาเรียน</div>
+        <div id="sumFemaleAttend" class="text-2xl font-bold text-pink-700">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">ชายขาด</div>
+        <div id="sumMaleAbsent" class="text-2xl font-bold text-orange-700">0</div>
+      </div>
+
+      <div class="dashboard-card text-center">
+        <div class="dashboard-label">หญิงขาด</div>
+        <div id="sumFemaleAbsent" class="text-2xl font-bold text-rose-700">0</div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+      <table class="min-w-full text-sm">
+        <thead class="bg-violet-700 text-white">
+        
+            <tr>
+              <th class="p-3 text-left">ชั้นเรียน</th>
+              <th class="p-3 text-center">ชายทั้งหมด</th>
+              <th class="p-3 text-center">หญิงทั้งหมด</th>
+              <th class="p-3 text-center">รวมทั้งหมด</th>
+              <th class="p-3 text-center">ชายมา</th>
+              <th class="p-3 text-center">หญิงมา</th>
+              <th class="p-3 text-center">รวมมา</th>
+              <th class="p-3 text-center">ชายขาด</th>
+              <th class="p-3 text-center">หญิงขาด</th>
+              <th class="p-3 text-center">รวมขาด</th>
+              <th class="p-3 text-left">ครูประจำชั้น</th>
+            </tr>
+          
+        </thead>
+
+        <tbody id="reportTableBody">
+          <tr>
+            <td colspan="11" class="p-6 text-center text-gray-400">
+              ยังไม่มีข้อมูลรายงาน
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
 </div>
 
 <script>
 
-  const API_URL = "https://script.google.com/macros/s/AKfycbyzA2SQ6cfT6cOWhe5yVzT_DlPFPZT5Vb1fbVt0q5rAD0p9ZikXSq8Gbpq6a5GwUprC/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbwU1ZrfGRkiyVT8HGkr7HCsnUSVGRt0w9cwBVIllG3wi-SuC5ODrZCNCSzZproWPO_D/exec";
 
   window.onload = function() {
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, "0");
     const dd = String(today.getDate()).padStart(2, "0");
-    const date = `${yyyy}-${mm}-${dd}`;
 
-    document.getElementById("startDate").value = date;
-    document.getElementById("endDate").value = date;
+    document.getElementById("reportDate").value = `${yyyy}-${mm}-${dd}`;
   };
 
   function generateReport() {
@@ -138,53 +229,111 @@
   }
 
   function renderResult(res) {
-    const box = document.getElementById("result");
+  const box = document.getElementById("result");
 
-    if (!res.files || res.files.length === 0) {
-      box.innerHTML = `<div class="p-4 bg-red-50 text-red-700 rounded-2xl">ไม่พบรายงาน</div>`;
-      return;
-    }
-
+  if (!res.files || res.files.length === 0) {
     box.innerHTML = `
-      <div class="p-4 bg-green-50 text-green-700 rounded-2xl font-bold">
-        สร้างรายงานสำเร็จ ${res.files.length} ไฟล์
+      <div class="p-4 bg-red-50 text-red-700 rounded-2xl">
+        ไม่พบรายงาน
       </div>
     `;
-
-    res.files.forEach(file => {
-      box.innerHTML += `
-        <div class="p-4 bg-white border rounded-2xl flex justify-between items-center gap-3">
-          <div>
-            <div class="font-bold text-violet-800">${file.dateText}</div>
-            <div class="text-sm text-gray-500">ร้อยละการมาเรียน ${file.percent}%</div>
-          </div>
-          <a href="${file.url}" target="_blank"
-             class="bg-violet-700 text-white px-4 py-2 rounded-xl font-bold">
-            เปิด PDF
-          </a>
-        </div>
-      `;
-    });
+    document.getElementById("dashboardResult").classList.add("hidden");
+    return;
   }
 
-  window.onload = function() {
+  box.innerHTML = `
+    <div class="p-4 bg-green-50 text-green-700 rounded-2xl font-bold">
+      สร้างรายงานสำเร็จ ${res.files.length} ไฟล์
+    </div>
+  `;
 
-    const today = new Date();
+  res.files.forEach(file => {
+    box.innerHTML += `
+      <div class="p-4 bg-white border rounded-2xl flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+        <div>
+          <div class="font-bold text-violet-800">${file.dateText}</div>
+          <div class="text-sm text-gray-500">
+            ร้อยละการมาเรียน ${file.percent}%
+          </div>
+        </div>
 
-    const yyyy = today.getFullYear();
+        <a href="${file.url}" target="_blank"
+          class="bg-violet-700 text-white px-4 py-2 rounded-xl font-bold text-center">
+          เปิด PDF
+        </a>
+      </div>
+    `;
+  });
 
-    const mm =
-      String(today.getMonth() + 1)
-        .padStart(2, "0");
+  renderDashboard(res);
+}
 
-    const dd =
-      String(today.getDate())
-        .padStart(2, "0");
+function renderDashboard(res) {
+  const summary = res.summary || {};
+  const rows = res.rows || [];
 
-    document.getElementById("reportDate").value =
-      `${yyyy}-${mm}-${dd}`;
+  document.getElementById("dashboardResult").classList.remove("hidden");
 
-  };
+  document.getElementById("sumTotalStudent").textContent =
+    summary.totalStudent || 0;
+
+  document.getElementById("sumTotalAttend").textContent =
+    summary.totalAttend || 0;
+
+  document.getElementById("sumTotalAbsent").textContent =
+    summary.totalAbsent || 0;
+
+  document.getElementById("sumPercent").textContent =
+    (res.files && res.files[0] ? res.files[0].percent : "0.00") + "%";
+
+  document.getElementById("sumMaleAttend").textContent =
+    summary.maleAttend || 0;
+
+  document.getElementById("sumFemaleAttend").textContent =
+    summary.femaleAttend || 0;
+
+  document.getElementById("sumMaleAbsent").textContent =
+    summary.maleAbsent || 0;
+
+  document.getElementById("sumFemaleAbsent").textContent =
+    summary.femaleAbsent || 0;
+
+  const tbody = document.getElementById("reportTableBody");
+
+  if (!rows.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11" class="p-6 text-center text-gray-400">
+          ไม่พบข้อมูลรายชั้นเรียน
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => `
+    <tr class="border-b ${
+      row.isSummary
+        ? "bg-yellow-50 font-bold text-violet-900"
+        : "hover:bg-violet-50"
+    }">
+      <td class="p-3">${row.grade}</td>
+      <td class="p-3 text-center">${row.maleTotal}</td>
+      <td class="p-3 text-center">${row.femaleTotal}</td>
+      <td class="p-3 text-center font-bold">${row.totalStudent}</td>
+      <td class="p-3 text-center text-blue-700">${row.maleAttend}</td>
+      <td class="p-3 text-center text-pink-700">${row.femaleAttend}</td>
+      <td class="p-3 text-center font-bold text-green-700">${row.totalAttend}</td>
+      <td class="p-3 text-center text-orange-700">${row.maleAbsent}</td>
+      <td class="p-3 text-center text-rose-700">${row.femaleAbsent}</td>
+      <td class="p-3 text-center font-bold text-red-700">${row.totalAbsent}</td>
+      <td class="p-3">${row.isSummary ? "-" : (row.teacher || "-")}</td>
+    </tr>
+  `).join("");
+}
+
+
+
 
 </script>
 
