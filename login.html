@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบผู้ดูแล</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: "Sarabun", sans-serif; }
+    .input {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1px solid #ddd6fe;
+      padding: .9rem 1rem;
+      outline: none;
+      background: white;
+    }
+    .input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 flex items-center justify-center p-4">
+
+  <div class="bg-white/95 rounded-[2rem] shadow-2xl p-8 w-full max-w-md">
+
+    <div class="flex flex-col items-center mb-7">
+      <div class="w-40 h-40 bg-white rounded-[36px] shadow-xl border border-violet-100 overflow-hidden flex items-center justify-center">
+        <img id="loginLogo" class="hidden w-full h-full object-contain p-4">
+        <span id="loginLogoText" class="text-7xl">🏫</span>
+      </div>
+
+      <h1 class="text-3xl font-bold text-violet-800 mt-5">
+        ระบบบันทึกสถิติการมาเรียน
+      </h1>
+
+      <p id="loginSchoolName" class="text-violet-500 mt-2 text-center">
+      </p>
+
+      <p class="text-gray-400 text-sm mt-1">
+        เข้าสู่ระบบผู้ดูแล
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block font-bold text-violet-800 mb-2">Username</label>
+        <input id="username" class="input" placeholder="Username" autocomplete="username">
+      </div>
+
+      <div>
+        <label class="block font-bold text-violet-800 mb-2">Password</label>
+        <input id="password" type="password" class="input" placeholder="Password" autocomplete="current-password">
+      </div>
+
+      <button onclick="loginAdmin()"
+        class="w-full bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition">
+        เข้าสู่ระบบ
+      </button>
+    </div>
+  </div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwU1ZrfGRkiyVT8HGkr7HCsnUSVGRt0w9cwBVIllG3wi-SuC5ODrZCNCSzZproWPO_D/exec";
+
+window.onload = function () {
+  loadLoginLogo();
+};
+
+function loadLoginLogo() {
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "getSchoolSettings"
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) return;
+
+    const data = res.data || {};
+
+    if (data.schoolName) {
+      document.getElementById("loginSchoolName").textContent = data.schoolName;
+    }
+
+    if (data.logoFileId) {
+      const url = `https://drive.google.com/thumbnail?id=${data.logoFileId}&sz=w1000`;
+
+      loginLogo.src = url;
+      loginLogo.classList.remove("hidden");
+      loginLogoText.classList.add("hidden");
+    }
+  })
+  .catch(() => {});
+}
+
+function loginAdmin() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอก Username และ Password", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "กำลังเข้าสู่ระบบ...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "loginAdmin",
+      username: username,
+      password: password
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    sessionStorage.setItem("admin_login", "true");
+    sessionStorage.setItem("admin_user", res.user || username);
+
+    Swal.fire({
+      icon: "success",
+      title: "เข้าสู่ระบบสำเร็จ",
+      timer: 900,
+      showConfirmButton: false
+    }).then(() => {
+      window.location.href = "admin.html";
+    });
+  })
+  .catch(err => {
+    Swal.fire("เข้าสู่ระบบไม่สำเร็จ", err.message, "error");
+  });
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    loginAdmin();
+  }
+});
+</script>
+
+</body>
+</html>

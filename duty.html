@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บันทึกครูเวรประจำวัน</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: "Sarabun", sans-serif; }
+    .input {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1px solid #ddd6fe;
+      padding: .85rem 1rem;
+      outline: none;
+      background: white;
+    }
+    .input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 p-8">
+
+<div class="w-full max-w-[1600px] mx-auto bg-white/95 rounded-[2rem] shadow-2xl p-6 md:p-8">
+
+  <h1 class="text-3xl font-bold text-violet-800">บันทึกครูเวรประจำวัน</h1>
+  <p class="text-violet-500 mt-2 mb-6">บันทึกข้อมูลสำหรับสร้างรายงานครูเวรประจำวัน</p>
+
+  <div class="grid md:grid-cols-2 gap-4 mb-4">
+    <div>
+      <label class="block mb-2 font-bold text-violet-900">วันที่</label>
+      <input id="dutyDate" type="date" class="input">
+    </div>
+
+    <div>
+      <label class="block mb-2 font-bold text-violet-900">ชื่อ-นามสกุลครูเวร</label>
+      <input id="teacherName" class="input" placeholder="เช่น นางสาวธาราธาร สุวรรณคาม">
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <label class="block mb-2 font-bold text-violet-900">บันทึกครูเวร</label>
+    <select id="dutyNote" class="input">
+      <option value="">เลือกข้อความสำเร็จรูป</option>
+      <option value="การปฏิบัติหน้าที่เวรประจำวันเป็นไปด้วยความเรียบร้อย นักเรียนมาเรียนและเข้าร่วมกิจกรรมตามปกติ ไม่พบเหตุการณ์ผิดปกติ">
+        การปฏิบัติหน้าที่เวรประจำวันเป็นไปด้วยความเรียบร้อย ไม่พบเหตุการณ์ผิดปกติ
+      </option>
+      <option value="การปฏิบัติหน้าที่เวรประจำวันเป็นไปด้วยความเรียบร้อย มีการดูแลความปลอดภัยของนักเรียนบริเวณหน้าโรงเรียน อาคารเรียน และพื้นที่ส่วนกลาง">
+        ดูแลความปลอดภัยบริเวณโรงเรียนเรียบร้อย
+      </option>
+      <option value="มีนักเรียนเจ็บป่วยหรือเกิดเหตุระหว่างวัน โปรดดูรายละเอียดในช่องเหตุการณ์เพิ่มเติม">
+        มีนักเรียนเจ็บป่วย/เกิดเหตุระหว่างวัน
+      </option>
+      <option value="พบเหตุการณ์ที่ควรบันทึกเพิ่มเติม โปรดดูรายละเอียดในช่องเหตุการณ์เพิ่มเติม">
+        พบเหตุการณ์เพิ่มเติม
+      </option>
+      <option value="มีการจัดกิจกรรมพิเศษภายในโรงเรียน การดำเนินกิจกรรมเป็นไปด้วยความเรียบร้อย">
+        มีกิจกรรมพิเศษภายในโรงเรียน
+      </option>
+    </select>
+  </div>
+
+  <div class="mb-5">
+    <label class="block mb-2 font-bold text-violet-900">เพิ่มเติม</label>
+    <textarea id="extraNote" rows="6" class="input" placeholder="พิมพ์เหตุการณ์เพิ่มเติม (ถ้ามี)"></textarea>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+    <button onclick="saveDuty()" type="button"
+        class="bg-gradient-to-r from-violet-700 to-fuchsia-600 hover:scale-[1.02] transition text-white px-6 py-4 rounded-2xl font-bold shadow text-lg">
+        💾 บันทึกครูเวร
+    </button>
+
+    <button onclick="window.open('index.html','_blank')" type="button"
+        class="bg-white border-2 border-violet-200 hover:bg-violet-50 text-violet-700 px-6 py-4 rounded-2xl font-bold text-lg">
+        🏠 กลับหน้าบันทึก
+    </button>
+    </div>
+
+  <div id="resultBox" class="mt-6"></div>
+  <!-- ประวัติครูเวร -->
+
+    <div class="mt-10 bg-violet-50 border border-violet-100 rounded-[2rem] p-5">
+
+    <h2 class="text-2xl font-bold text-violet-800 mb-4">
+        ประวัติบันทึกครูเวร
+    </h2>
+
+    <div class="grid md:grid-cols-3 gap-3 mb-4">
+
+        <input
+        type="date"
+        id="searchDutyDate"
+        class="input"
+        >
+
+        <button
+        onclick="searchDutyHistory()"
+        class="bg-violet-700 text-white rounded-2xl font-bold px-4 py-3"
+        >
+        ค้นหา
+        </button>
+
+        <button
+        onclick="loadDutyHistory()"
+        class="bg-white border border-violet-300 text-violet-700 rounded-2xl font-bold px-4 py-3"
+        >
+        แสดงทั้งหมด
+        </button>
+
+    </div>
+
+    <div class="overflow-x-auto rounded-2xl border border-violet-100">
+
+        <table class="min-w-full text-sm">
+
+        <thead class="bg-violet-700 text-white">
+
+            <tr>
+                <th class="p-3">วันที่</th>
+                <th class="p-3">ครูเวร</th>
+                <th class="p-3">บันทึก</th>
+                <th class="p-3">PDF</th>
+                <th class="p-3">จัดการ</th>
+            </tr>
+
+        </thead>
+
+        <tbody id="dutyHistoryTable">
+
+            <tr>
+            <td colspan="4" class="p-6 text-center text-gray-400">
+                ยังไม่มีข้อมูล
+            </td>
+            </tr>
+
+        </tbody>
+
+        </table>
+
+    </div>
+
+    </div>
+
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwU1ZrfGRkiyVT8HGkr7HCsnUSVGRt0w9cwBVIllG3wi-SuC5ODrZCNCSzZproWPO_D/exec";
+
+window.onload = function() {
+  setToday();
+  loadDutyHistory();
+};
+
+function setToday() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  dutyDate.value = `${yyyy}-${mm}-${dd}`;
+}
+
+function saveDuty() {
+  const data = {
+    date: dutyDate.value,
+    dutyNote: dutyNote.value,
+    extraNote: extraNote.value.trim(),
+    teacherName: teacherName.value.trim()
+  };
+
+  if (!data.date || !data.dutyNote || !data.teacherName) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่ เลือกบันทึกครูเวร และกรอกชื่อครูเวร", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "กำลังบันทึก...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "saveDutyLog",
+      data
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire("สำเร็จ", "บันทึกครูเวรเรียบร้อยแล้ว", "success");
+  })
+  .catch(err => {
+    Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+  });
+}
+
+function generateDutyPDF() {
+  if (!dutyDate.value) {
+    Swal.fire("กรุณาเลือกวันที่", "", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "กำลังสร้าง PDF...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "generateDutyReportPDF",
+      date: dutyDate.value
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire("สำเร็จ", "สร้าง PDF ครูเวรเรียบร้อยแล้ว", "success");
+
+    resultBox.innerHTML = `
+      <div class="p-4 bg-green-50 text-green-700 rounded-2xl font-bold flex justify-between items-center gap-3">
+        <span>${res.data.dateText}</span>
+        <a href="${res.data.url}" target="_blank"
+          class="bg-green-600 text-white px-4 py-2 rounded-xl">
+          เปิด PDF
+        </a>
+      </div>
+    `;
+  })
+  .catch(err => {
+    Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+  });
+}
+
+function loadDutyHistory() {
+
+  fetch(API_URL, {
+
+    method: "POST",
+
+    body: JSON.stringify({
+
+      action: "getDutyHistory"
+
+    })
+
+  })
+
+  .then(r => r.json())
+
+  .then(r => {
+
+    renderDutyHistory(r.data || []);
+
+  });
+
+}
+
+
+function searchDutyHistory() {
+
+  const date =
+    document.getElementById(
+      "searchDutyDate"
+    ).value;
+
+  fetch(API_URL, {
+
+    method: "POST",
+
+    body: JSON.stringify({
+
+      action: "getDutyHistory",
+
+      date
+
+    })
+
+  })
+
+  .then(r => r.json())
+
+  .then(r => {
+
+    renderDutyHistory(r.data || []);
+
+  });
+
+}
+
+function renderDutyHistory(rows) {
+  const tbody = document.getElementById("dutyHistoryTable");
+
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="p-6 text-center text-gray-400">
+          ไม่พบข้อมูลบันทึกครูเวร
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr class="border-b hover:bg-violet-50 transition">
+      <td class="p-3 whitespace-nowrap font-semibold text-violet-800">
+        ${r.date || "-"}
+      </td>
+
+      <td class="p-3 whitespace-nowrap">
+        ${r.teacherName || "-"}
+      </td>
+
+      <td class="p-3 max-w-[350px]">
+        <div class="truncate font-semibold text-gray-800" title="${r.dutyNote || ""}">
+            ${r.dutyNote || "-"}
+        </div>
+
+        ${
+            r.extraNote
+            ? `<div
+                class="text-xs text-gray-500 truncate mt-1"
+                title="${r.extraNote}">
+                เพิ่มเติม: ${r.extraNote}
+                </div>`
+            : ""
+        }
+        </td>
+
+      <td class="p-3 text-center whitespace-nowrap">
+        ${
+          r.pdfUrl
+            ? `<a href="${r.pdfUrl}" target="_blank"
+                class="inline-block bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl font-bold">
+                เปิด PDF
+              </a>`
+            : `<span class="text-gray-400">-</span>`
+        }
+      </td>
+
+      <td class="p-3 whitespace-nowrap">
+        <div class="flex flex-wrap gap-2 justify-center">
+          <button
+            type="button"
+            onclick='openEditDutyModal(${JSON.stringify(r)})'
+            class="bg-amber-400 hover:bg-amber-500 text-amber-950 px-3 py-2 rounded-xl font-bold">
+            ✏️
+          </button>
+
+          <button
+            type="button"
+            onclick="deleteDuty(${r.row})"
+            class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-2 rounded-xl font-bold">
+            🗑️
+          </button>
+
+          <button
+            type="button"
+            onclick="generateDutyPDFByDate('${r.date}')"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-bold">
+            📄 สร้าง PDF
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function generateDutyPDFByDate(date) {
+  Swal.fire({
+    title: "กำลังสร้าง PDF...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "generateDutyReportPDF",
+      date: date
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire("สำเร็จ", "สร้าง PDF ครูเวรเรียบร้อยแล้ว", "success");
+    loadDutyHistory();
+  })
+  .catch(err => {
+    Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+  });
+}
+</script>
+
+</body>
+</html>
