@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ตั้งค่าระบบ</title>
+  <title>Admin Dashboard</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,183 +13,363 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      width: 100%;
-      overflow-x: hidden;
-    }
-
-    body {
-      font-family: "Sarabun", sans-serif;
-    }
-
+    body { font-family: "Sarabun", sans-serif; }
+    .glass { background: rgba(255,255,255,.95); backdrop-filter: blur(16px); }
     .input {
       width: 100%;
       border-radius: 1rem;
       border: 1px solid #ddd6fe;
-      padding: 0.75rem 1rem;
+      padding: .8rem 1rem;
       outline: none;
       background: white;
-      transition: 0.2s;
     }
-
     .input:focus {
       border-color: #7c3aed;
-      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+      box-shadow: 0 0 0 4px rgba(124,58,237,.12);
     }
-
-    th, td {
-      white-space: nowrap;
+    .label {
+      display: block;
+      margin-bottom: .45rem;
+      font-weight: 700;
+      color: #4c1d95;
     }
-
-    @media (max-width: 640px) {
-      th, td {
-        padding: 0.65rem !important;
-      }
+    .menu-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      text-align: left;
+      padding: .9rem 1rem;
+      border-radius: 1rem;
+      font-weight: 700;
+      color: #5b21b6;
+      transition: .2s;
     }
+    .menu-btn:hover { background: #f3e8ff; }
+    .menu-active {
+      background: linear-gradient(to right, #6d28d9, #c026d3);
+      color: white;
+      box-shadow: 0 10px 25px rgba(124,58,237,.25);
+    }
+    .section-title {
+      color: #4c1d95;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+    th, td { white-space: nowrap; }
   </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100 p-3 sm:p-4">
+<body class="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-fuchsia-100">
 
-  <div class="w-full max-w-7xl mx-auto bg-white/95 rounded-[1.5rem] md:rounded-[2rem] shadow-xl p-4 sm:p-5 md:p-8">
+<div class="flex min-h-screen">
 
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-      <div>
-        <h1 class="text-2xl md:text-3xl font-bold text-violet-800">
-          ตั้งค่าระบบ
-        </h1>
-        <p class="text-violet-500 mt-1">
-          จัดการภาคเรียน วันหยุด และวันเรียนชดเชย
-        </p>
+  <!-- Sidebar -->
+  <aside class="hidden lg:flex w-72 glass shadow-2xl p-5 flex-col">
+    <div class="mb-7">
+      <div class="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center overflow-hidden mb-3">
+        <img id="sidebarLogo" class="hidden w-full h-full object-contain bg-white">
+        <span id="sidebarLogoText" class="text-3xl">🏫</span>
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2">
-        <button
-          onclick="window.open('check_missing.html','_blank')"
-          class="bg-violet-700 hover:bg-violet-800 text-white px-5 py-3 rounded-2xl font-bold shadow transition"
-        >
-          ไปหน้าตรวจสอบ
-        </button>
-
-        <button
-          onclick="window.open('index.html','_blank')"
-          class="bg-white border-2 border-violet-200 hover:bg-violet-50 text-violet-700 px-5 py-3 rounded-2xl font-bold transition"
-        >
-          กลับหน้าบันทึก
-        </button>
-      </div>
+      <h1 class="text-2xl font-bold text-violet-800">Admin</h1>
+      <p class="text-sm text-violet-500">Attendance Center</p>
     </div>
 
+    <nav class="space-y-2 flex-1">
+      <button class="menu-btn menu-active" onclick="showSection('overview', this)">🏫 ภาพรวมระบบ</button>
+      <button class="menu-btn" onclick="showSection('classes', this)">👥 ตั้งค่าชั้นเรียน</button>
+      <button class="menu-btn" onclick="showSection('term', this)">📅 เปิด-ปิดเทอม</button>
+      <button class="menu-btn" onclick="showSection('holiday', this)">🏖️ วันหยุด</button>
+      <button class="menu-btn" onclick="showSection('makeup', this)">🔁 วันเรียนชดเชย</button>
+    </nav>
 
-    <!-- ตั้งค่าภาคเรียน -->
-    <div class="bg-violet-50 rounded-2xl p-5 border border-violet-100 mb-6">
-      <h2 class="text-xl font-bold text-violet-800 mb-4">
-        ตั้งค่าภาคเรียน
-      </h2>
+    <div class="text-[11px] text-violet-400 leading-5">
+      © 2026 พัฒนาโดย นางสาวธาราธาร สุวรรณคาม<br>
+      โรงเรียนรวมไทยพัฒนา 1<br> 
+      สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตาก เขต 2
+    </div>
+  </aside>
 
-      <div class="grid md:grid-cols-5 gap-4">
+  <!-- Main -->
+  <main class="flex-1 p-4 lg:p-8">
+
+    <div class="glass rounded-[2rem] shadow-xl p-5 lg:p-8">
+
+      <!-- Header -->
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
         <div>
-          <label class="block mb-2 font-semibold text-violet-900">
-            ปีการศึกษา
-          </label>
-          <input id="termYear" class="input" placeholder="เช่น 2569">
+          <h2 id="pageTitle" class="text-2xl lg:text-3xl font-bold text-violet-800">
+            ภาพรวมระบบ
+          </h2>
+          <p class="text-violet-500 mt-1">
+            ตั้งค่าและจัดการข้อมูลหลักของระบบบันทึกการมาเรียน
+          </p>
         </div>
 
-        <div>
-          <label class="block mb-2 font-semibold text-violet-900">
-            ภาคเรียน
-          </label>
-          <input id="termNo" class="input" placeholder="เช่น 1">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="window.open('index.html','_blank')"
+            class="bg-violet-700 text-white px-5 py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition">
+            หน้าบันทึก
+          </button>
+
+          <button onclick="window.open('check_missing.html','_blank')"
+            class="bg-fuchsia-700 text-white px-5 py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition">
+            หน้าตรวจสอบ
+          </button>
+
+          <button onclick="logoutAdmin()"
+            class="bg-red-500 text-white px-5 py-3 rounded-2xl font-bold shadow hover:bg-red-600">
+            ออกจากระบบ
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="lg:hidden mb-5">
+        <select id="mobileMenu" class="input" onchange="showSection(this.value)">
+          <option value="overview">ภาพรวมระบบ</option>
+          <option value="classes">ตั้งค่าชั้นเรียน</option>
+          <option value="term">เปิด-ปิดเทอม</option>
+          <option value="holiday">วันหยุด</option>
+          <option value="makeup">วันเรียนชดเชย</option>
+        </select>
+      </div>
+
+      <!-- Overview -->
+      <section id="section-overview" class="admin-section">
+
+        <div class="grid md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-3xl p-5 shadow text-center">
+            <div class="text-gray-500">ปีการศึกษา</div>
+            <div id="cardYear" class="text-3xl font-bold text-violet-700">-</div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-5 shadow text-center">
+            <div class="text-gray-500">โหมดระบบ</div>
+            <div id="cardMode" class="text-xl font-bold text-fuchsia-700">-</div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-5 shadow text-center">
+            <div class="text-gray-500">เมนูจัดการ</div>
+            <div class="text-3xl font-bold text-blue-600">5</div>
+          </div>
+
+          <div class="bg-white rounded-3xl p-5 shadow text-center">
+            <div class="text-gray-500">สถานะ</div>
+            <div class="text-xl font-bold text-green-600">พร้อมใช้งาน</div>
+          </div>
         </div>
 
-        <div>
-          <label class="block mb-2 font-semibold text-violet-900">
-            วันเปิดภาคเรียน
-          </label>
-          <input id="termStart" type="date" class="input">
+        <div class="bg-violet-50 border border-violet-100 rounded-3xl p-5 mb-5">
+          <h3 class="section-title">🏫 ข้อมูลโรงเรียน</h3>
+          <p class="text-violet-500 text-sm mt-1">
+            ข้อมูลกลางสำหรับหน้าเว็บและรายงาน
+          </p>
         </div>
 
-        <div>
-          <label class="block mb-2 font-semibold text-violet-900">
-            วันปิดภาคเรียน
-          </label>
-          <input id="termEnd" type="date" class="input">
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="label">ปีการศึกษา</label>
+            <input id="academicYear" class="input" placeholder="2569">
+          </div>
+
+          <div>
+            <label class="label">ชื่อโรงเรียน</label>
+            <input id="schoolName" class="input" placeholder="โรงเรียนรวมไทยพัฒนา 1">
+          </div>
+
+          <div>
+            <label class="label">สังกัด</label>
+            <input id="organization" class="input" placeholder="สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตาก เขต 2">
+          </div>
+
+          <div>
+            <label class="label">ผู้อำนวยการสถานศึกษา</label>
+            <input id="director" class="input" placeholder="ดร.สรวิชญ์ เรือนแก้ว">
+          </div>
+
+          <div>
+            <label class="label">โลโก้โรงเรียน</label>
+            <input id="logoFile" type="file" accept="image/*" class="input">
+
+            <p class="text-xs text-violet-500 mt-2 leading-5">
+              เลือกรูปโลโก้จากเครื่อง ระบบจะแสดงตัวอย่างทันที และเมื่อกดบันทึกจะอัปโหลดเข้า Google Drive อัตโนมัติ
+            </p>
+
+            <div class="mt-4 flex items-center gap-4">
+              <img id="logoPreview" class="hidden w-28 h-28 rounded-2xl border object-contain bg-white p-2">
+              <div class="text-sm text-gray-500">
+                รองรับ JPG, PNG, WEBP
+              </div>
+            </div>
+
+            <input id="logoFileId" type="hidden">
+          </div>
+
+          <div>
+            <label class="label">โหมดการใช้งาน</label>
+            <select id="systemMode" class="input">
+              <option value="manual">Manual</option>
+              <option value="admin">Admin / DMC</option>
+            </select>
+
+            <p class="text-xs text-violet-500 mt-2 leading-5">
+              Manual เหมาะช่วงเปิดเทอมที่ยอดนักเรียนยังไม่นิ่ง ส่วน Admin / DMC เหมาะหลังยืนยัน DMC แล้ว
+            </p>
+          </div>
         </div>
 
-        <div class="flex items-end">
-          <button
-            onclick="saveTerm()"
-            class="w-full bg-violet-700 hover:bg-violet-800 text-white rounded-2xl font-bold py-3 transition"
-          >
-            บันทึกภาคเรียน
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button onclick="saveSchoolSettings()"
+            class="bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white px-6 py-3 rounded-2xl font-bold shadow hover:scale-[1.02] transition">
+            บันทึกข้อมูลโรงเรียน
+          </button>
+
+          <button onclick="loadSchoolSettings()"
+            class="bg-violet-100 text-violet-700 px-6 py-3 rounded-2xl font-bold hover:bg-violet-200">
+            โหลดข้อมูลใหม่
           </button>
         </div>
-      </div>
+      </section>
 
-      <p class="text-sm text-violet-500 mt-2">
-        ถ้ายังไม่รู้วันปิดภาคเรียน สามารถเว้นว่างไว้ได้
-      </p>
-    </div>
+      <!-- Classes -->
+      <section id="section-classes" class="admin-section hidden">
+        <div class="bg-violet-50 border border-violet-100 rounded-3xl p-5 mb-5">
+          <h3 class="section-title">👥 ตั้งค่าชั้นเรียน</h3>
+          <p class="text-violet-500 text-sm mt-1">
+            จัดการข้อมูลจากชีต “สถิตินักเรียนทั้งหมด”
+          </p>
+        </div>
 
+        <div class="grid md:grid-cols-6 gap-3 mb-4">
+            <select id="classPrefix" class="input">
+                <option value="">เลือกระดับ</option>
+                <option value="อนุบาลศึกษาปีที่">อนุบาลศึกษาปีที่</option>
+                <option value="ประถมศึกษาปีที่">ประถมศึกษาปีที่</option>
+                <option value="มัธยมศึกษาปีที่">มัธยมศึกษาปีที่</option>
+            </select>
 
-    <!-- ตารางภาคเรียน -->
-    <div class="w-full overflow-x-auto rounded-2xl border border-violet-100 bg-white mb-8">
-      <table class="min-w-[800px] w-full text-xs sm:text-sm">
-        <thead class="bg-violet-700 text-white">
-          <tr>
-            <th class="p-3">ปีการศึกษา</th>
-            <th class="p-3">ภาคเรียน</th>
-            <th class="p-3">เปิดภาคเรียน</th>
-            <th class="p-3">ปิดภาคเรียน</th>
-            <th class="p-3">สถานะ</th>
-            <th class="p-3">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="termBody">
-          <tr>
-            <td colspan="6" class="p-5 text-center text-gray-400">
-              กำลังโหลดข้อมูล...
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            <input id="classLevelRoom" class="input" placeholder="เช่น 2/1">
 
+            <input id="classMale" type="number" class="input" placeholder="ชายทั้งหมด">
+            <input id="classFemale" type="number" class="input" placeholder="หญิงทั้งหมด">
+            <input id="classTeacher" class="input" placeholder="ครูประจำชั้น">
 
-    <!-- ตั้งค่าวันหยุด -->
-    <div class="bg-fuchsia-50 rounded-2xl p-5 border border-fuchsia-100 mb-6">
-      <h2 class="text-xl font-bold text-fuchsia-800 mb-4">
-        ตั้งค่าวันหยุด
-      </h2>
+            <button onclick="saveClassSetting()"
+                class="bg-violet-700 text-white rounded-2xl font-bold px-4 py-3 shadow">
+                เพิ่มห้องเรียน
+            </button>
 
-      <div class="grid md:grid-cols-6 gap-4">
+            <input id="editingClassRow" type="hidden">
+            </div>
 
-        <div>
-          <label class="block mb-2 font-semibold text-fuchsia-900">
-            วันที่เริ่ม
-          </label>
+        <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-violet-700 text-white">
+              <tr>
+                <th class="p-3 text-left">ระดับชั้น</th>
+                <th class="p-3 text-center">ชาย</th>
+                <th class="p-3 text-center">หญิง</th>
+                <th class="p-3 text-center">รวม</th>
+                <th class="p-3 text-left">ครูประจำชั้น</th>
+                <th class="p-3 text-center">จัดการ</th>
+              </tr>
+            </thead>
+
+            <tbody id="classTableBody">
+              <tr>
+                <td colspan="6" class="p-6 text-center text-gray-400">
+                  กำลังโหลดข้อมูล...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Term -->
+      <section id="section-term" class="admin-section hidden">
+        <div class="bg-violet-50 border border-violet-100 rounded-3xl p-5 mb-5">
+          <h3 class="section-title">📅 ตั้งค่าเปิด-ปิดเทอม</h3>
+          <p class="text-violet-500 text-sm mt-1">
+            เลือกวันเปิดเทอม และกำหนดวันปิดเทอมได้หากทราบแล้ว หากยังไม่ระบุ ระบบจะนับถึงวันปัจจุบัน
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-5 gap-3 mb-4">
+          <div>
+            <label class="label">ปีการศึกษา</label>
+            <input id="termYear" class="input bg-gray-50" placeholder="2569" readonly>
+          </div>
+
+          <div>
+            <label class="label">ภาคเรียน</label>
+            <select id="termNo" class="input">
+                <option value="">เลือกภาคเรียน</option> 
+                <option value="1">ภาคเรียนที่ 1</option>
+                <option value="2">ภาคเรียนที่ 2</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="label">วันที่เปิดเทอม</label>
+            <input id="termStart" type="date" class="input">
+          </div>
+
+          <div>
+            <label class="label">วันที่ปิดเทอม</label>
+            <input id="termEnd" type="date" class="input">
+          </div>
+
+          <div class="flex items-end">
+            <button onclick="saveTerm()"
+              class="w-full bg-violet-700 text-white rounded-2xl font-bold px-4 py-3 shadow">
+              บันทึก
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-violet-700 text-white">
+              <tr>
+                <th class="p-3">ปีการศึกษา</th>
+                <th class="p-3">ภาคเรียน</th>
+                <th class="p-3">เปิดเทอม</th>
+                <th class="p-3">ปิดเทอม</th>
+                <th class="p-3">สถานะ</th>
+                <th class="p-3">จัดการ</th>
+              </tr>
+            </thead>
+
+            <tbody id="termTableBody">
+              <tr>
+                <td colspan="6" class="p-6 text-center text-gray-400">
+                  กำลังโหลดข้อมูล...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Holiday -->
+      <section id="section-holiday" class="admin-section hidden">
+        <div class="bg-violet-50 border border-violet-100 rounded-3xl p-5 mb-5">
+          <h3 class="section-title">🏖️ ตั้งค่าวันหยุด</h3>
+          <p class="text-violet-500 text-sm mt-1">
+            กำหนดวันที่ไม่ต้องนับเป็นวันเรียน เช่น วันหยุดราชการ วันหยุดโรงเรียน หรือกิจกรรมพิเศษ
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-6 gap-3 mb-4">
           <input id="holidayStart" type="date" class="input">
-        </div>
-
-        <div>
-          <label class="block mb-2 font-semibold text-fuchsia-900">
-            วันที่สิ้นสุด
-          </label>
           <input id="holidayEnd" type="date" class="input">
-        </div>
-
-        <div>
-          <label class="block mb-2 font-semibold text-fuchsia-900">
-            ประเภทวันหยุด
-          </label>
 
           <select id="holidayType" class="input">
-            <option value="" selected hidden>เลือกประเภท</option>
+            <option value="">เลือกประเภท</option>
             <option>วันหยุดราชการ</option>
             <option>วันหยุดนักขัตฤกษ์</option>
             <option>วันหยุดชดเชย</option>
@@ -203,598 +383,1187 @@
             <option>ภัยพิบัติ / เหตุฉุกเฉิน</option>
             <option>อื่น ๆ</option>
           </select>
-        </div>
 
-        <div>
-          <label class="block mb-2 font-semibold text-fuchsia-900">
-            รายการ
-          </label>
+          <select id="holidayName" class="input">
+            <option value="">เลือกรายการ</option>
+            <option value="วันจักรี">วันจักรี</option>
+            <option value="วันฉัตรมงคล">วันฉัตรมงคล</option>
+            <option value="วันเฉลิมพระชนมพรรษา">วันเฉลิมพระชนมพรรษา</option>
+            <option value="วันแม่แห่งชาติ">วันแม่แห่งชาติ</option>
+            <option value="วันพ่อแห่งชาติ">วันพ่อแห่งชาติ</option>
+            <option value="วันรัฐธรรมนูญ">วันรัฐธรรมนูญ</option>
+            <option value="วันแรงงานแห่งชาติ">วันแรงงานแห่งชาติ</option>
 
-          <input
-            id="holidayName"
-            class="input"
-            list="holidayNameList"
-            placeholder="เลือกรายการ หรือพิมพ์เอง"
-          >
+            <option value="วันมาฆบูชา">วันมาฆบูชา</option>
+            <option value="วันวิสาขบูชา">วันวิสาขบูชา</option>
+            <option value="วันอาสาฬหบูชา">วันอาสาฬหบูชา</option>
+            <option value="วันเข้าพรรษา">วันเข้าพรรษา</option>
+            <option value="วันออกพรรษา">วันออกพรรษา</option>
 
-          <datalist id="holidayNameList">
-            <option value="วันจักรี">
-            <option value="วันฉัตรมงคล">
-            <option value="วันเฉลิมพระชนมพรรษา">
-            <option value="วันแม่แห่งชาติ">
-            <option value="วันพ่อแห่งชาติ">
-            <option value="วันรัฐธรรมนูญ">
-            <option value="วันแรงงานแห่งชาติ">
+            <option value="ชดเชยวันปีใหม่">ชดเชยวันปีใหม่</option>
+            <option value="ชดเชยวันสงกรานต์">ชดเชยวันสงกรานต์</option>
+            <option value="ชดเชยวันแรงงาน">ชดเชยวันแรงงาน</option>
+            <option value="ชดเชยวันเฉลิมพระชนมพรรษา">ชดเชยวันเฉลิมพระชนมพรรษา</option>
 
-            <option value="วันมาฆบูชา">
-            <option value="วันวิสาขบูชา">
-            <option value="วันอาสาฬหบูชา">
-            <option value="วันเข้าพรรษา">
-            <option value="วันออกพรรษา">
+            <option value="หยุดหลังสอบกลางภาค">หยุดหลังสอบกลางภาค</option>
+            <option value="หยุดเตรียมสถานที่">หยุดเตรียมสถานที่</option>
+            <option value="หยุดกิจกรรมภายใน">หยุดกิจกรรมภายใน</option>
+            <option value="หยุด Big Cleaning Day">หยุด Big Cleaning Day</option>
 
-            <option value="ชดเชยวันปีใหม่">
-            <option value="ชดเชยวันสงกรานต์">
-            <option value="ชดเชยวันแรงงาน">
-            <option value="ชดเชยวันเฉลิมพระชนมพรรษา">
+            <option value="กีฬาสี">กีฬาสี</option>
+            <option value="ค่ายลูกเสือ">ค่ายลูกเสือ</option>
+            <option value="ทัศนศึกษา">ทัศนศึกษา</option>
+            <option value="อบรมคุณธรรม">อบรมคุณธรรม</option>
+            <option value="กิจกรรมวันสำคัญ">กิจกรรมวันสำคัญ</option>
+            <option value="ประชุมผู้ปกครอง">ประชุมผู้ปกครอง</option>
 
-            <option value="หยุดหลังสอบกลางภาค">
-            <option value="หยุดเตรียมสถานที่">
-            <option value="หยุดกิจกรรมภายใน">
-            <option value="หยุด Big Cleaning Day">
+            <option value="สอบกลางภาค">สอบกลางภาค</option>
+            <option value="สอบปลายภาค">สอบปลายภาค</option>
+            <option value="สอบ RT">สอบ RT</option>
+            <option value="สอบ NT">สอบ NT</option>
+            <option value="สอบ O-NET">สอบ O-NET</option>
 
-            <option value="กีฬาสี">
-            <option value="ค่ายลูกเสือ">
-            <option value="ทัศนศึกษา">
-            <option value="อบรมคุณธรรม">
-            <option value="กิจกรรมวันสำคัญ">
-            <option value="ประชุมผู้ปกครอง">
+            <option value="ฝนตกหนัก">ฝนตกหนัก</option>
+            <option value="น้ำท่วม">น้ำท่วม</option>
+            <option value="หมอกควัน">หมอกควัน</option>
+            <option value="แผ่นดินไหว">แผ่นดินไหว</option>
+            <option value="โรคระบาด">โรคระบาด</option>
+            <option value="ไฟฟ้าดับ">ไฟฟ้าดับ</option>
+            <option value="อื่น ๆ">อื่น ๆ</option>
+            </select>
 
-            <option value="สอบกลางภาค">
-            <option value="สอบปลายภาค">
-            <option value="สอบ RT">
-            <option value="สอบ NT">
-            <option value="สอบ O-NET">
+          <input id="holidayNote" class="input" placeholder="หมายเหตุ">
 
-            <option value="ฝนตกหนัก">
-            <option value="น้ำท่วม">
-            <option value="หมอกควัน">
-            <option value="แผ่นดินไหว">
-            <option value="โรคระบาด">
-            <option value="ไฟฟ้าดับ">
-            <option value="อื่น ๆ">
-          </datalist>
-        </div>
-
-        <div>
-          <label class="block mb-2 font-semibold text-fuchsia-900">
-            หมายเหตุ
-          </label>
-          <input id="holidayNote" class="input" placeholder="เพิ่มเติม (ถ้ามี)">
-        </div>
-
-        <div class="flex items-end">
           <button
             onclick="saveHoliday()"
-            class="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-2xl font-bold py-3 transition"
-          >
-            บันทึกวันหยุด
+            class="w-full bg-fuchsia-700 hover:bg-fuchsia-700 text-white rounded-2xl font-bold py-3 transition"
+            >
+            บันทึก
+            </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-violet-700 text-white">
+              <tr>
+                <th class="p-3">วันที่เริ่ม</th>
+                <th class="p-3">วันที่สิ้นสุด</th>
+                <th class="p-3">ประเภท</th>
+                <th class="p-3">รายการ</th>
+                <th class="p-3">สถานะ</th>
+                <th class="p-3">จัดการ</th>
+              </tr>
+            </thead>
+
+            <tbody id="holidayTableBody">
+              <tr>
+                <td colspan="6" class="p-6 text-center text-gray-400">
+                  กำลังโหลดข้อมูล...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Makeup -->
+      <section id="section-makeup" class="admin-section hidden">
+        <div class="bg-violet-50 border border-violet-100 rounded-3xl p-5 mb-5">
+          <h3 class="section-title">🔁 ตั้งค่าวันเรียนชดเชย</h3>
+          <p class="text-violet-500 text-sm mt-1">
+            กำหนดวันเสาร์-อาทิตย์หรือวันพิเศษที่ต้องนับเป็นวันเรียน
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-3 mb-4">
+          <input id="makeupDate" type="date" class="input">
+
+          <select id="makeupName" class="input">
+            <option value="">เลือกรายการ</option>
+            <option value="เรียนชดเชย">เรียนชดเชย</option>
+            <option value="เรียนชดเชยวันหยุดพิเศษ">เรียนชดเชยวันหยุดพิเศษ</option>
+            <option value="เรียนชดเชยวันเสาร์">เรียนชดเชยวันเสาร์</option>
+            <option value="เรียนชดเชยวันอาทิตย์">เรียนชดเชยวันอาทิตย์</option>
+            <option value="เรียนชดเชยตามประกาศโรงเรียน">เรียนชดเชยตามประกาศโรงเรียน</option>
+            <option value="เรียนชดเชยกรณีพิเศษ">เรียนชดเชยกรณีพิเศษ</option>
+          </select>
+
+          <input id="makeupNote" class="input" placeholder="หมายเหตุ">
+
+          <button onclick="saveMakeup()"
+            class="bg-violet-700 text-white rounded-2xl font-bold px-4 py-3 shadow">
+            บันทึก
           </button>
         </div>
-      </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-violet-100 bg-white">
+          <table class="min-w-full text-sm">
+            <thead class="bg-violet-700 text-white">
+              <tr>
+                <th class="p-3">วันที่</th>
+                <th class="p-3">รายการ</th>
+                <th class="p-3">หมายเหตุ</th>
+                <th class="p-3">สถานะ</th>
+                <th class="p-3">จัดการ</th>
+              </tr>
+            </thead>
+
+            <tbody id="makeupTableBody">
+              <tr>
+                <td colspan="5" class="p-6 text-center text-gray-400">
+                  กำลังโหลดข้อมูล...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </div>
 
 
-    <!-- ตารางวันหยุด -->
-    <div class="w-full overflow-x-auto rounded-2xl border border-fuchsia-100 bg-white">
-      <table class="min-w-[950px] w-full text-xs sm:text-sm">
-        <thead class="bg-fuchsia-600 text-white">
-          <tr>
-            <th class="p-3">วันที่เริ่ม</th>
-            <th class="p-3">วันที่สิ้นสุด</th>
-            <th class="p-3">ประเภท</th>
-            <th class="p-3">รายการ</th>
-            <th class="p-3">หมายเหตุ</th>
-            <th class="p-3">สถานะ</th>
-            <th class="p-3">จัดการ</th>
-          </tr>
-        </thead>
 
-        <tbody id="holidayBody">
-          <tr>
-            <td colspan="7" class="p-5 text-center text-gray-400">
-              กำลังโหลดข้อมูล...
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ตั้งค่าวันเรียนชดเชย -->
-<div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 mb-6 mt-8">
-  <h2 class="text-xl font-bold text-emerald-800 mb-4">
-    ตั้งค่าวันเรียนชดเชย
-  </h2>
-
-  <div class="grid md:grid-cols-4 gap-4">
-
-    <div>
-      <label class="block mb-2 font-semibold text-emerald-900">
-        วันที่เรียนชดเชย
-      </label>
-      <input id="makeupDate" type="date" class="input">
-    </div>
-
-    <div>
-      <label class="block mb-2 font-semibold text-emerald-900">
-        รายการ
-      </label>
-      <input
-        id="makeupName"
-        class="input"
-        list="makeupNameList"
-        placeholder="เช่น เรียนชดเชย"
-      >
-
-      <datalist id="makeupNameList">
-        <option value="เรียนชดเชย">
-        <option value="เรียนชดเชยวันหยุดพิเศษ">
-        <option value="เรียนชดเชยวันเสาร์">
-        <option value="เรียนชดเชยวันอาทิตย์">
-        <option value="เรียนชดเชยตามประกาศโรงเรียน">
-        <option value="เรียนชดเชยกรณีพิเศษ">
-      </datalist>
-    </div>
-
-    <div>
-      <label class="block mb-2 font-semibold text-emerald-900">
-        หมายเหตุ
-      </label>
-      <input id="makeupNote" class="input" placeholder="เพิ่มเติม (ถ้ามี)">
-    </div>
-
-    <div class="flex items-end">
-      <button
-        onclick="saveMakeupDay()"
-        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold py-3 transition"
-      >
-        บันทึกวันเรียนชดเชย
-      </button>
-    </div>
-
-  </div>
-
-  <p class="text-sm text-emerald-600 mt-2">
-    ใช้สำหรับกำหนดวันเสาร์-อาทิตย์หรือวันพิเศษที่โรงเรียนเปิดเรียน ระบบจะนับเป็นวันที่ต้องบันทึกการมาเรียน
-  </p>
+  </main>
 </div>
-
-<!-- ตารางวันเรียนชดเชย -->
-<div class="w-full overflow-x-auto rounded-2xl border border-emerald-100 bg-white">
-  <table class="min-w-[800px] w-full text-xs sm:text-sm">
-    <thead class="bg-emerald-600 text-white">
-      <tr>
-        <th class="p-3">วันที่</th>
-        <th class="p-3">รายการ</th>
-        <th class="p-3">หมายเหตุ</th>
-        <th class="p-3">สถานะ</th>
-        <th class="p-3">จัดการ</th>
-      </tr>
-    </thead>
-
-    <tbody id="makeupBody">
-      <tr>
-        <td colspan="5" class="p-5 text-center text-gray-400">
-          กำลังโหลดข้อมูล...
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-    <footer class="text-center text-[12px] text-violet-400 mt-6 leading-6">
-      © 2026 พัฒนาโดย นางสาวธาราธาร สุวรรณคาม | โรงเรียนรวมไทยพัฒนา 1 | สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตาก เขต 2 
-    </footer>
-
-  </div>
-
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyzA2SQ6cfT6cOWhe5yVzT_DlPFPZT5Vb1fbVt0q5rAD0p9ZikXSq8Gbpq6a5GwUprC/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwU1ZrfGRkiyVT8HGkr7HCsnUSVGRt0w9cwBVIllG3wi-SuC5ODrZCNCSzZproWPO_D/exec";
+if (sessionStorage.getItem("admin_login") !== "true") {
+  window.location.href = "login.html";
+}
 
-  window.onload = loadAdminData;
+let selectedLogoBase64 = "";
+let selectedLogoName = "";
+let selectedLogoMimeType = "";
+let editingClassRow = "";
 
+window.onload = function () {
+  setupLogoPreview();
+  loadSchoolSettings();
+  loadClassSettings();
+  loadAdminSettings();
+};
 
-  function apiPost(payload) {
-    return fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (!res.success) {
-        throw new Error(res.message || "เกิดข้อผิดพลาดจากระบบ");
-      }
-      return res.data;
-    });
-  }
+function showSection(section, btn) {
+  document.querySelectorAll(".admin-section").forEach(el => el.classList.add("hidden"));
+  const target = document.getElementById("section-" + section);
+  if (target) target.classList.remove("hidden");
 
+  document.querySelectorAll(".menu-btn").forEach(el => el.classList.remove("menu-active"));
+  if (btn && btn.classList) btn.classList.add("menu-active");
 
-  function loadAdminData() {
-    apiPost({
-      action: "getAdminSettings"
-    })
-    .then(renderData)
-    .catch(showError);
-  }
+  const titles = {
+    overview: "ภาพรวมระบบ",
+    classes: "ตั้งค่าชั้นเรียน",
+    term: "ตั้งค่าเปิด-ปิดเทอม",
+    holiday: "ตั้งค่าวันหยุด",
+    makeup: "ตั้งค่าวันเรียนชดเชย"
+  };
+  document.getElementById("pageTitle").textContent = titles[section] || "Admin";
 
+  const mobileMenu = document.getElementById("mobileMenu");
+  if (mobileMenu) mobileMenu.value = section;
+}
 
-  function renderData(res) {
-    renderTerms(res.terms || []);
-    renderHolidays(res.holidays || []);
-    renderMakeupDays(res.makeupDays || []);
-    }
+function apiPost(action, payload = {}) {
+  return fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ action, ...payload })
+  }).then(res => res.json());
+}
 
-
-  function renderTerms(terms) {
-    const body = document.getElementById("termBody");
-    body.innerHTML = "";
-
-    if (!terms.length) {
-      body.innerHTML = `
-        <tr>
-          <td colspan="6" class="p-5 text-center text-gray-400">
-            ยังไม่มีข้อมูล
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    terms.forEach(item => {
-      body.innerHTML += `
-        <tr class="border-b hover:bg-violet-50">
-          <td class="p-3 text-center">${item.year || "-"}</td>
-          <td class="p-3 text-center">${item.term || "-"}</td>
-          <td class="p-3 text-center">${item.start || "-"}</td>
-          <td class="p-3 text-center">${item.end || "-"}</td>
-          <td class="p-3 text-center font-bold ${item.status === "ใช้งาน" ? "text-green-600" : "text-gray-500"}">
-            ${item.status || "-"}
-          </td>
-          <td class="p-3 text-center">
-            <button
-              onclick="activateTerm(${item.row})"
-              class="m-1 px-3 py-1 bg-green-100 text-green-700 rounded-full font-bold hover:bg-green-200 transition"
-            >
-              ใช้งาน
-            </button>
-
-            <button
-              onclick="deleteTerm(${item.row})"
-              class="m-1 px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold hover:bg-red-200 transition"
-            >
-              ลบ
-            </button>
-          </td>
-        </tr>
-      `;
-    });
-  }
-
-
-  function renderHolidays(holidays) {
-    const body = document.getElementById("holidayBody");
-    body.innerHTML = "";
-
-    if (!holidays.length) {
-      body.innerHTML = `
-        <tr>
-          <td colspan="7" class="p-5 text-center text-gray-400">
-            ยังไม่มีข้อมูล
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    holidays.forEach(item => {
-      body.innerHTML += `
-        <tr class="border-b hover:bg-fuchsia-50">
-          <td class="p-3 text-center">${item.start || "-"}</td>
-          <td class="p-3 text-center">${item.end || "-"}</td>
-          <td class="p-3">${item.type || "-"}</td>
-          <td class="p-3">${item.name || "-"}</td>
-          <td class="p-3">${item.note || "-"}</td>
-          <td class="p-3 text-center font-bold ${item.status === "ใช้งาน" ? "text-green-600" : "text-gray-500"}">
-            ${item.status || "-"}
-          </td>
-          <td class="p-3 text-center">
-            <button
-              onclick="toggleHoliday(${item.row}, '${item.status}')"
-              class="m-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold hover:bg-blue-200 transition"
-            >
-              เปิด/ปิด
-            </button>
-
-            <button
-              onclick="deleteHoliday(${item.row})"
-              class="m-1 px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold hover:bg-red-200 transition"
-            >
-              ลบ
-            </button>
-          </td>
-        </tr>
-      `;
-    });
-  }
-
-  function renderMakeupDays(makeupDays) {
-  const body = document.getElementById("makeupBody");
-  body.innerHTML = "";
-
-  if (!makeupDays.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="5" class="p-5 text-center text-gray-400">
-          ยังไม่มีข้อมูล
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  makeupDays.forEach(item => {
-    body.innerHTML += `
-      <tr class="border-b hover:bg-emerald-50">
-        <td class="p-3 text-center">${item.date || "-"}</td>
-        <td class="p-3">${item.name || "-"}</td>
-        <td class="p-3">${item.note || "-"}</td>
-        <td class="p-3 text-center font-bold ${item.status === "ใช้งาน" ? "text-green-600" : "text-gray-500"}">
-          ${item.status || "-"}
-        </td>
-        <td class="p-3 text-center">
-          <button
-            onclick="toggleMakeupDay(${item.row}, '${item.status}')"
-            class="m-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold hover:bg-blue-200 transition"
-          >
-            เปิด/ปิด
-          </button>
-
-          <button
-            onclick="deleteMakeupDay(${item.row})"
-            class="m-1 px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold hover:bg-red-200 transition"
-          >
-            ลบ
-          </button>
-        </td>
-      </tr>
-    `;
+function showLoading(title = "กำลังดำเนินการ...") {
+  Swal.fire({
+    title,
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
   });
 }
 
+function postAPI(action, payload, successText, callback) {
+  showLoading("กำลังบันทึก...");
 
-  function saveTerm() {
-    const data = {
-      year: document.getElementById("termYear").value.trim(),
-      term: document.getElementById("termNo").value.trim(),
-      start: document.getElementById("termStart").value,
-      end: document.getElementById("termEnd").value
-    };
+  apiPost(action, payload)
+    .then(res => {
+      if (!res.success) throw new Error(res.message || "ไม่สามารถดำเนินการได้");
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: successText,
+        confirmButtonColor: "#7c3aed"
+      });
+      if (callback) callback();
+    })
+    .catch(err => {
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: err.message,
+        confirmButtonColor: "#7c3aed"
+      });
+    });
+}
 
-    if (!data.year || !data.term || !data.start) {
-      Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกปีการศึกษา ภาคเรียน และวันเปิดภาคเรียน", "warning");
+/* =========================
+   โลโก้และภาพรวมระบบ
+========================= */
+function setupLogoPreview() {
+  const logoInput = document.getElementById("logoFile");
+  if (!logoInput) return;
+
+  logoInput.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      Swal.fire("ไฟล์ไม่ถูกต้อง", "กรุณาเลือกไฟล์รูปภาพเท่านั้น", "warning");
+      logoInput.value = "";
       return;
     }
 
-    apiPost({
-      action: "saveTermSetting",
-      data: data
-    })
-    .then(() => {
-      Swal.fire("สำเร็จ", "บันทึกตั้งค่าภาคเรียนแล้ว", "success");
-      clearTermForm();
-      loadAdminData();
-    })
-    .catch(showError);
-  }
+    selectedLogoName = file.name;
+    selectedLogoMimeType = file.type;
 
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      const dataUrl = evt.target.result;
+      selectedLogoBase64 = dataUrl.split(",")[1];
 
-  function saveHoliday() {
-    const data = {
-      start: document.getElementById("holidayStart").value,
-      end: document.getElementById("holidayEnd").value,
-      type: document.getElementById("holidayType").value.trim(),
-      name: document.getElementById("holidayName").value.trim(),
-      note: document.getElementById("holidayNote").value.trim()
+      logoPreview.src = dataUrl;
+      logoPreview.classList.remove("hidden");
+
+      sidebarLogo.src = dataUrl;
+      sidebarLogo.classList.remove("hidden");
+      sidebarLogoText.classList.add("hidden");
     };
+    reader.readAsDataURL(file);
+  });
+}
 
-    if (!data.start || !data.type || !data.name) {
-      Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่เริ่ม ประเภท และรายการ", "warning");
-      return;
-    }
-
-    if (!data.end) {
-      data.end = data.start;
-    }
-
-    apiPost({
-      action: "saveHolidaySetting",
-      data: data
-    })
-    .then(() => {
-      Swal.fire("สำเร็จ", "บันทึกวันหยุดแล้ว", "success");
-      clearHolidayForm();
-      loadAdminData();
-    })
-    .catch(showError);
-  }
-
-
-  function activateTerm(row) {
-    apiPost({
-      action: "activateTerm",
-      row: row
-    })
-    .then(() => loadAdminData())
-    .catch(showError);
-  }
-
-
-  function toggleHoliday(row, status) {
-    const newStatus =
-      status === "ใช้งาน"
-        ? "ปิดใช้งาน"
-        : "ใช้งาน";
-
-    apiPost({
-      action: "updateHolidayStatus",
-      row: row,
-      status: newStatus
-    })
-    .then(() => loadAdminData())
-    .catch(showError);
-  }
-
-
-  function deleteTerm(row) {
-    Swal.fire({
-      title: "ยืนยันการลบ?",
-      text: "ข้อมูลภาคเรียนนี้จะถูกลบออกจากระบบ",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "ลบ",
-      cancelButtonText: "ยกเลิก",
-      confirmButtonColor: "#ef4444"
-    })
-    .then(result => {
-      if (result.isConfirmed) {
-        apiPost({
-          action: "deleteSettingRow",
-          type: "term",
-          row: row
-        })
-        .then(() => loadAdminData())
-        .catch(showError);
-      }
-    });
-  }
-
-
-  function deleteHoliday(row) {
-    Swal.fire({
-      title: "ยืนยันการลบ?",
-      text: "ข้อมูลวันหยุดนี้จะถูกลบออกจากระบบ",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "ลบ",
-      cancelButtonText: "ยกเลิก",
-      confirmButtonColor: "#ef4444"
-    })
-    .then(result => {
-      if (result.isConfirmed) {
-        apiPost({
-          action: "deleteSettingRow",
-          type: "holiday",
-          row: row
-        })
-        .then(() => loadAdminData())
-        .catch(showError);
-      }
-    });
-  }
-
-
-  function clearTermForm() {
-    document.getElementById("termYear").value = "";
-    document.getElementById("termNo").value = "";
-    document.getElementById("termStart").value = "";
-    document.getElementById("termEnd").value = "";
-  }
-
-
-  function clearHolidayForm() {
-    document.getElementById("holidayStart").value = "";
-    document.getElementById("holidayEnd").value = "";
-    document.getElementById("holidayType").value = "";
-    document.getElementById("holidayName").value = "";
-    document.getElementById("holidayNote").value = "";
-  }
-
-  function saveMakeupDay() {
-  const data = {
-    date: document.getElementById("makeupDate").value,
-    name: document.getElementById("makeupName").value.trim(),
-    note: document.getElementById("makeupNote").value.trim()
-  };
-
-  if (!data.date || !data.name) {
-    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่และรายการวันเรียนชดเชย", "warning");
+function updateLogoByFileId(fileId) {
+  if (!fileId) {
+    sidebarLogo.classList.add("hidden");
+    sidebarLogoText.classList.remove("hidden");
+    logoPreview.classList.add("hidden");
     return;
   }
 
-  apiPost({
-    action: "saveMakeupDaySetting",
-    data: data
-  })
-  .then(() => {
-    Swal.fire("สำเร็จ", "บันทึกวันเรียนชดเชยแล้ว", "success");
-    clearMakeupForm();
-    loadAdminData();
-  })
-  .catch(showError);
+  const url = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  sidebarLogo.src = url;
+  sidebarLogo.classList.remove("hidden");
+  sidebarLogoText.classList.add("hidden");
+
+  logoPreview.src = url;
+  logoPreview.classList.remove("hidden");
 }
 
-function toggleMakeupDay(row, status) {
-  const newStatus =
-    status === "ใช้งาน"
-      ? "ปิดใช้งาน"
-      : "ใช้งาน";
+function loadSchoolSettings() {
+  apiPost("getSchoolSettings")
+    .then(res => {
+      if (!res.success) throw new Error(res.message || "โหลดข้อมูลไม่สำเร็จ");
+      const d = res.data || {};
 
-  apiPost({
-    action: "updateMakeupDayStatus",
-    row: row,
-    status: newStatus
-  })
-  .then(() => loadAdminData())
-  .catch(showError);
+      academicYear.value = d.academicYear || "";
+      termYear.value = d.academicYear || "";
+      schoolName.value = d.schoolName || "";
+      organization.value = d.organization || "";
+      director.value = d.director || "";
+      logoFileId.value = d.logoFileId || "";
+      systemMode.value = d.mode || "manual";
+
+      cardYear.textContent = d.academicYear || "-";
+      cardMode.textContent = d.mode === "admin" ? "Admin/DMC" : "Manual";
+      updateLogoByFileId(d.logoFileId);
+    })
+    .catch(err => Swal.fire("โหลดข้อมูลโรงเรียนไม่สำเร็จ", err.message, "error"));
 }
 
-function deleteMakeupDay(row) {
+function saveSchoolSettings() {
+  const data = collectSchoolSettingsData();
+
+  if (!data.academicYear || !data.schoolName) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกปีการศึกษาและชื่อโรงเรียน", "warning");
+    return;
+  }
+
   Swal.fire({
-    title: "ยืนยันการลบ?",
-    text: "ข้อมูลวันเรียนชดเชยนี้จะถูกลบออกจากระบบ",
+    title: "ยืนยันการบันทึก",
+    icon: "question",
+    html: `
+      <div class="text-left text-sm leading-7">
+        <div><b>ปีการศึกษา:</b> ${data.academicYear}</div>
+        <div><b>ชื่อโรงเรียน:</b> ${data.schoolName}</div>
+        <div><b>สังกัด:</b> ${data.organization || "-"}</div>
+        <div><b>ผู้อำนวยการ:</b> ${data.director || "-"}</div>
+        <div><b>โหมด:</b> ${data.mode === "admin" ? "ใช้ยอดกลางจาก Admin / DMC" : "ครูกรอกจำนวนนักเรียนเอง"}</div>
+        ${selectedLogoBase64 ? '<div class="mt-2 text-violet-600 font-bold">มีไฟล์โลโก้ใหม่ที่รออัปโหลด</div>' : ''}
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed",
+    cancelButtonColor: "#9ca3af"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+    saveSchoolSettingsConfirm(data);
+  });
+}
+
+function collectSchoolSettingsData() {
+  return {
+    academicYear: academicYear.value.trim(),
+    schoolName: schoolName.value.trim(),
+    organization: organization.value.trim(),
+    director: director.value.trim(),
+    logoFileId: logoFileId.value.trim(),
+    mode: systemMode.value,
+    logoBase64: selectedLogoBase64,
+    logoName: selectedLogoName,
+    logoMimeType: selectedLogoMimeType
+  };
+}
+
+function saveSchoolSettingsConfirm(data) {
+  showLoading("กำลังบันทึกข้อมูลโรงเรียน...");
+
+  apiPost("saveSchoolSettings", { data })
+    .then(res => {
+      if (!res.success) throw new Error(res.message || "บันทึกไม่สำเร็จ");
+
+      selectedLogoBase64 = "";
+      selectedLogoName = "";
+      selectedLogoMimeType = "";
+      logoFile.value = "";
+
+      Swal.fire({
+        icon: "success",
+        title: "บันทึกสำเร็จ",
+        text: "บันทึกข้อมูลโรงเรียนเรียบร้อยแล้ว",
+        confirmButtonColor: "#7c3aed"
+      });
+      loadSchoolSettings();
+    })
+    .catch(err => Swal.fire("บันทึกไม่สำเร็จ", err.message, "error"));
+}
+
+/* =========================
+   ตั้งค่าชั้นเรียน
+========================= */
+function loadClassSettings() {
+  apiPost("getClassSettings")
+    .then(res => {
+      if (!res.success) throw new Error(res.message || "โหลดข้อมูลชั้นเรียนไม่สำเร็จ");
+      renderClassTable(res.data || []);
+    })
+    .catch(err => {
+      classTableBody.innerHTML = `
+        <tr>
+          <td colspan="6" class="p-6 text-center text-red-500">
+            โหลดข้อมูลชั้นเรียนไม่สำเร็จ: ${err.message}
+          </td>
+        </tr>`;
+    });
+}
+
+function renderClassTable(rows) {
+  if (!rows.length) {
+    classTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-6 text-center text-gray-400">
+          ยังไม่มีข้อมูลชั้นเรียน
+        </td>
+      </tr>`;
+    return;
+  }
+
+  classTableBody.innerHTML = rows.map(row => `
+    <tr class="border-b ${row.isSummary ? 'bg-yellow-50 font-bold text-violet-900' : 'hover:bg-violet-50'}">
+      <td class="p-3 font-bold">${row.grade}</td>
+      <td class="p-3 text-center">${row.male}</td>
+      <td class="p-3 text-center">${row.female}</td>
+      <td class="p-3 text-center font-bold">${row.total}</td>
+      <td class="p-3">${row.teacher || "-"}</td>
+      <td class="p-3 text-center">
+        ${
+          row.isSummary
+            ? `<span class="text-gray-400">-</span>`
+            : `
+              <button onclick='editClass(${JSON.stringify(row)})'
+                class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-bold">✏️</button>
+
+              <button onclick='deleteClass(${row.row})'
+                class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">🗑️</button>
+            `
+        }
+      </td>
+    </tr>
+  `).join("");
+}
+
+
+
+function editClass(row) {
+  const parsed = parseGradeText(row.grade);
+
+  Swal.fire({
+    title: "แก้ไขชั้นเรียน",
+    width: 520,
+    html: `
+      <div class="text-left space-y-3">
+        <label class="label">ระดับ</label>
+        <select id="editPrefix" class="input">
+          <option value="อนุบาลศึกษาปีที่" ${parsed.prefix === "อนุบาลศึกษาปีที่" ? "selected" : ""}>อนุบาลศึกษาปีที่</option>
+          <option value="ประถมศึกษาปีที่" ${parsed.prefix === "ประถมศึกษาปีที่" ? "selected" : ""}>ประถมศึกษาปีที่</option>
+          <option value="มัธยมศึกษาปีที่" ${parsed.prefix === "มัธยมศึกษาปีที่" ? "selected" : ""}>มัธยมศึกษาปีที่</option>
+        </select>
+
+        <label class="label">ชั้น/ห้อง</label>
+        <input id="editLevelRoom" class="input" value="${parsed.levelRoom}">
+
+        <label class="label">ชายทั้งหมด</label>
+        <input id="editMale" type="number" class="input" value="${row.male}">
+
+        <label class="label">หญิงทั้งหมด</label>
+        <input id="editFemale" type="number" class="input" value="${row.female}">
+
+        <label class="label">ครูประจำชั้น</label>
+        <input id="editTeacher" class="input" value="${row.teacher || ""}">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed",
+    preConfirm: () => {
+      const prefix = document.getElementById("editPrefix").value;
+      const levelRoom = document.getElementById("editLevelRoom").value.trim();
+      const male = document.getElementById("editMale").value;
+      const female = document.getElementById("editFemale").value;
+      const teacher = document.getElementById("editTeacher").value.trim();
+
+      if (!prefix || !levelRoom || male === "" || female === "" || !teacher) {
+        Swal.showValidationMessage("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+        return false;
+      }
+
+      return {
+        row: row.row,
+        grade: `${prefix} ${levelRoom}`,
+        male: Number(male),
+        female: Number(female),
+        teacher
+      };
+    }
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("saveClassSetting", { data: result.value }, "แก้ไขชั้นเรียนเรียบร้อยแล้ว", loadClassSettings);
+  });
+}
+
+function parseGradeText(grade) {
+  const prefixes = [
+    "อนุบาลศึกษาปีที่",
+    "ประถมศึกษาปีที่",
+    "มัธยมศึกษาปีที่"
+  ];
+
+  for (const prefix of prefixes) {
+    if (grade.startsWith(prefix)) {
+      return {
+        prefix,
+        levelRoom: grade.replace(prefix, "").trim()
+      };
+    }
+  }
+
+  return {
+    prefix: "",
+    levelRoom: grade
+  };
+}
+
+function saveClassSetting() {
+  const prefix = classPrefix.value;
+  const levelRoom = classLevelRoom.value.trim();
+  const male = Number(classMale.value);
+  const female = Number(classFemale.value);
+  const teacher = classTeacher.value.trim();
+  const row = editingClassRow.value;
+
+  if (!prefix || !levelRoom || classMale.value === "" || classFemale.value === "" || !teacher) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกข้อมูลให้ครบทุกช่อง", "warning");
+    return;
+  }
+
+  const grade = `${prefix} ${levelRoom}`;
+
+  const data = {
+    row: row || "",
+    grade,
+    male,
+    female,
+    teacher
+  };
+
+  Swal.fire({
+    title: "ยืนยันการบันทึก",
+    text: `ต้องการบันทึกข้อมูล ${grade} ใช่หรือไม่`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("saveClassSetting", { data }, "บันทึกชั้นเรียนเรียบร้อยแล้ว", () => {
+      clearClassForm();
+      loadClassSettings();
+    });
+  });
+}
+
+function clearClassForm() {
+  editingClassRow.value = "";
+  classPrefix.value = "";
+  classLevelRoom.value = "";
+  classMale.value = "";
+  classFemale.value = "";
+  classTeacher.value = "";
+}
+
+function deleteClass(row) {
+  Swal.fire({
+    title: "ยืนยันการลบ",
+    text: "ต้องการลบชั้นเรียนนี้ใช่หรือไม่",
     icon: "warning",
     showCancelButton: true,
     confirmButtonText: "ลบ",
     cancelButtonText: "ยกเลิก",
-    confirmButtonColor: "#ef4444"
-  })
-  .then(result => {
-    if (result.isConfirmed) {
-      apiPost({
-        action: "deleteMakeupDay",
-        row: row
-      })
-      .then(() => loadAdminData())
-      .catch(showError);
-    }
+    confirmButtonColor: "#dc2626"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("deleteClassSetting", { row }, "ลบชั้นเรียนเรียบร้อยแล้ว", loadClassSettings);
   });
 }
 
-function clearMakeupForm() {
-  document.getElementById("makeupDate").value = "";
-  document.getElementById("makeupName").value = "";
-  document.getElementById("makeupNote").value = "";
+/* =========================
+   ภาคเรียน / วันหยุด / วันเรียนชดเชย
+========================= */
+function loadAdminSettings() {
+  apiPost("getAdminSettings")
+    .then(res => {
+      if (!res.success) throw new Error(res.message || "โหลดข้อมูลตั้งค่าไม่สำเร็จ");
+      renderTerms(res.data.terms || []);
+      renderHolidays(res.data.holidays || []);
+      renderMakeups(res.data.makeupDays || []);
+    })
+    .catch(err => console.log(err.message));
 }
 
-  function showError(error) {
-    Swal.fire({
-      icon: "error",
-      title: "เกิดข้อผิดพลาด",
-      text: error.message,
-      confirmButtonColor: "#7c3aed"
-    });
+function saveTerm() {
+  const data = {
+    row: "",
+    year: termYear.value.trim(),
+    term: termNo.value,
+    start: termStart.value,
+    end: termEnd.value
+  };
+
+  if (!data.year || !data.term || !data.start ) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณาเลือกภาคเรียนและวันที่เปิดเทอม", "warning");
+    return;
   }
+
+  Swal.fire({
+    title: "ยืนยันการบันทึก",
+    text: `ต้องการบันทึกภาคเรียนที่ ${data.term} ปีการศึกษา ${data.year} ใช่หรือไม่`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("saveTermSetting", { data }, "บันทึกภาคเรียนเรียบร้อยแล้ว", () => {
+      clearTermForm();
+      loadAdminSettings();
+      loadSchoolSettings();
+    });
+  });
+}
+
+function clearTermForm() {
+  termNo.value = "";
+  termStart.value = "";
+  termEnd.value = "";
+}
+
+function updateTermStatus(row, status) {
+  const text = status === "ใช้งาน"
+    ? "ต้องการเปิดใช้งานภาคเรียนนี้ใช่หรือไม่"
+    : "ต้องการปิดใช้งานภาคเรียนนี้ใช่หรือไม่";
+
+  Swal.fire({
+    title: "ยืนยันการเปลี่ยนสถานะ",
+    text: text,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "ยืนยัน",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("updateTermStatus", { row, status }, "เปลี่ยนสถานะภาคเรียนเรียบร้อยแล้ว", loadAdminSettings);
+  });
+}
+
+function renderTerms(rows) {
+  termTableBody.innerHTML = rows.length ? rows.map(row => {
+    const nextStatus = row.status === "ใช้งาน" ? "รอเปิด" : "ใช้งาน";
+    const statusBtnText = row.status === "ใช้งาน" ? "ปิดใช้งาน" : "ใช้งาน";
+
+    return `
+      <tr class="border-b hover:bg-violet-50">
+        <td class="p-3 text-center">${row.year}</td>
+        <td class="p-3 text-center">ภาคเรียนที่ ${row.term}</td>
+        <td class="p-3 text-center">${row.start}</td>
+        <td class="p-3 text-center">${row.end || "-"}</td>
+        <td class="p-3 text-center">
+          <span class="${row.status === 'ใช้งาน' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'} px-3 py-1 rounded-full font-bold">
+            ${row.status}
+          </span>
+        </td>
+        <td class="p-3 text-center">
+          <button onclick="updateTermStatus(${row.row}, '${nextStatus}')"
+            class="px-3 py-1 rounded-full ${row.status === 'ใช้งาน' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'} font-bold">
+            ${statusBtnText}
+          </button>
+          
+          <button onclick='editTerm(${JSON.stringify(row)})'
+            class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-bold">✏️</button>
+          
+          <button onclick="deleteSettingRow('term', ${row.row})"
+            class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join("") : `
+    <tr><td colspan="6" class="p-6 text-center text-gray-400">ไม่มีข้อมูลภาคเรียน</td></tr>`;
+}
+
+function editTerm(row) {
+  Swal.fire({
+    title: "แก้ไขเปิด-ปิดเทอม",
+    width: 520,
+    html: `
+      <div class="text-left space-y-3">
+        <label class="label">ปีการศึกษา</label>
+        <input id="editTermYear" class="input bg-gray-50" value="${row.year}" readonly>
+
+        <label class="label">ภาคเรียน</label>
+        <select id="editTermNo" class="input">
+          <option value="">เลือกภาคเรียน</option>
+          <option value="1" ${String(row.term) === "1" ? "selected" : ""}>ภาคเรียนที่ 1</option>
+          <option value="2" ${String(row.term) === "2" ? "selected" : ""}>ภาคเรียนที่ 2</option>
+        </select>
+
+        <label class="label">วันที่เปิดเทอม</label>
+        <input id="editTermStart" type="date" class="input" value="${row.start}">
+
+        <label class="label">วันที่ปิดเทอม</label>
+        <input id="editTermEnd" type="date" class="input" value="${row.end}">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed",
+    preConfirm: () => {
+      const year = document.getElementById("editTermYear").value.trim();
+      const term = document.getElementById("editTermNo").value;
+      const start = document.getElementById("editTermStart").value;
+      const end = document.getElementById("editTermEnd").value;
+
+      if (!year || !term || !start ) {
+        Swal.showValidationMessage("กรุณาเลือกภาคเรียนและวันที่เปิดเทอม");
+        return false;
+      }
+
+      return {
+        row: row.row,
+        year,
+        term,
+        start,
+        end
+      };
+    }
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("saveTermSetting", { data: result.value }, "แก้ไขภาคเรียนเรียบร้อยแล้ว", loadAdminSettings);
+  });
+}
+
+function saveHoliday() {
+  const data = {
+    start: holidayStart.value,
+    end: holidayEnd.value || holidayStart.value,
+    type: holidayType.value,
+    name: holidayName.value,
+    note: holidayNote.value.trim()
+  };
+
+  if (!data.start || !data.type || !data.name) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่เริ่ม ประเภท และรายการวันหยุด", "warning");
+    return;
+  }
+
+  postAPI("saveHolidaySetting", { data }, "เพิ่มวันหยุดเรียบร้อย", () => {
+    holidayStart.value = "";
+    holidayEnd.value = "";
+    holidayType.value = "";
+    holidayName.value = "";
+    holidayNote.value = "";
+    loadAdminSettings();
+  });
+}
+
+function updateHolidayStatus(row, status) {
+  postAPI("updateHolidayStatus", { row, status }, "เปลี่ยนสถานะวันหยุดเรียบร้อย", loadAdminSettings);
+}
+
+function renderHolidays(rows) {
+  holidayTableBody.innerHTML = rows.length ? rows.map(row => `
+    <tr class="border-b hover:bg-violet-50">
+      <td class="p-3 text-center">${row.start}</td>
+      <td class="p-3 text-center">${row.end}</td>
+      <td class="p-3">${row.type}</td>
+      <td class="p-3">${row.name}</td>
+      <td class="p-3 text-center">
+        <span class="px-3 py-1 rounded-full ${
+            row.status === "ใช้งาน"
+            ? "bg-green-100 text-green-700"
+            : "bg-gray-100 text-gray-600"
+        } font-bold">
+            ${row.status}
+        </span>
+        </td>
+
+        <td class="p-3 text-center space-x-1">
+        <button onclick="updateHolidayStatus(${row.row}, '${row.status === "ใช้งาน" ? "ปิดใช้งาน" : "ใช้งาน"}')"
+            class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-bold">
+            ${row.status === "ใช้งาน" ? "ปิดใช้งาน" : "ใช้งาน"}
+        </button>
+
+        <button onclick='editHoliday(${JSON.stringify(row)})'
+            class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-bold">
+            ✏️
+        </button>
+
+        <button onclick="deleteSettingRow('holiday', ${row.row})"
+            class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">
+            🗑️
+        </button>
+        </td>
+    </tr>
+  `).join("") : `<tr><td colspan="6" class="p-6 text-center text-gray-400">ไม่มีข้อมูลวันหยุด</td></tr>`;
+}
+
+function saveMakeup() {
+  const data = {
+    date: makeupDate.value,
+    name: makeupName.value,
+    note: makeupNote.value.trim()
+  };
+
+  if (!data.date || !data.name) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณาเลือกวันที่และรายการวันเรียนชดเชย", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "ยืนยันการบันทึก",
+    text: `ต้องการบันทึก "${data.name}" ใช่หรือไม่`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "บันทึก",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    postAPI("saveMakeupDaySetting", { data }, "บันทึกวันเรียนชดเชยเรียบร้อยแล้ว", () => {
+      makeupDate.value = "";
+      makeupName.value = "";
+      makeupNote.value = "";
+      loadAdminSettings();
+    });
+  });
+}
+
+function editMakeup(row) {
+  Swal.fire({
+    title: "",
+    width: 560,
+    padding: "0",
+    background: "transparent",
+    showConfirmButton: false,
+    html: `
+      <div class="bg-white rounded-[28px] overflow-hidden shadow-2xl text-left">
+        <div class="bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white px-6 py-5">
+          <div class="text-2xl font-bold">แก้ไขวันเรียนชดเชย</div>
+          <div class="text-sm opacity-90 mt-1">${row.date}</div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="label">วันที่</label>
+            <input id="editMakeupDate" type="date" class="input" value="${row.date}">
+          </div>
+
+          <div>
+            <label class="label">รายการ</label>
+            <select id="editMakeupName" class="input">
+              ${getMakeupNameOptions(row.name)}
+            </select>
+          </div>
+
+          <div>
+            <label class="label">หมายเหตุ</label>
+            <input id="editMakeupNote" class="input" value="${row.note || ""}" placeholder="เพิ่มเติม (ถ้ามี)">
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="Swal.close()"
+              class="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">
+              ยกเลิก
+            </button>
+
+            <button onclick="submitEditMakeup(${row.row})"
+              class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white font-bold shadow hover:scale-[1.02] transition">
+              บันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  });
+}
+
+function submitEditMakeup(row) {
+  const data = {
+    row: row,
+    date: document.getElementById("editMakeupDate").value,
+    name: document.getElementById("editMakeupName").value,
+    note: document.getElementById("editMakeupNote").value.trim()
+  };
+
+  if (!data.date || !data.name) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณาเลือกวันที่และรายการวันเรียนชดเชย", "warning");
+    return;
+  }
+
+  Swal.close();
+
+  postAPI(
+    "saveMakeupDaySetting",
+    { data },
+    "แก้ไขวันเรียนชดเชยเรียบร้อยแล้ว",
+    loadAdminSettings
+  );
+}
+
+function getMakeupNameOptions(selected) {
+  const names = [
+    "เรียนชดเชย",
+    "เรียนชดเชยวันหยุดพิเศษ",
+    "เรียนชดเชยวันเสาร์",
+    "เรียนชดเชยวันอาทิตย์",
+    "เรียนชดเชยตามประกาศโรงเรียน",
+    "เรียนชดเชยกรณีพิเศษ"
+  ];
+
+  return `
+    <option value="">เลือกรายการ</option>
+    ${names.map(name => `
+      <option value="${name}" ${name === selected ? "selected" : ""}>${name}</option>
+    `).join("")}
+  `;
+}
+
+function updateMakeupDayStatus(row, status) {
+  postAPI("updateMakeupDayStatus", { row, status }, "เปลี่ยนสถานะวันเรียนชดเชยเรียบร้อย", loadAdminSettings);
+}
+
+function renderMakeups(rows) {
+  makeupTableBody.innerHTML = rows.length ? rows.map(row => {
+    const nextStatus = row.status === "ใช้งาน" ? "ปิดใช้งาน" : "ใช้งาน";
+    const statusBtnText = row.status === "ใช้งาน" ? "ปิดใช้งาน" : "ใช้งาน";
+
+    return `
+      <tr class="border-b hover:bg-violet-50">
+        <td class="p-3 text-center">${row.date}</td>
+        <td class="p-3">${row.name}</td>
+        <td class="p-3">${row.note || "-"}</td>
+
+        <td class="p-3 text-center">
+          <span class="px-3 py-1 rounded-full ${
+            row.status === "ใช้งาน"
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-100 text-gray-600"
+          } font-bold">
+            ${row.status}
+          </span>
+        </td>
+
+        <td class="p-3 text-center space-x-1">
+          <button onclick="updateMakeupDayStatus(${row.row}, '${nextStatus}')"
+            class="px-3 py-1 rounded-full ${
+              row.status === "ใช้งาน"
+                ? "bg-gray-100 text-gray-700"
+                : "bg-green-100 text-green-700"
+            } font-bold">
+            ${statusBtnText}
+          </button>
+
+          <button onclick='editMakeup(${JSON.stringify(row)})'
+            class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-bold">
+            ✏️
+          </button>
+
+          <button onclick="deleteMakeupDay(${row.row})"
+            class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">
+            🗑️
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("") : `
+    <tr>
+      <td colspan="5" class="p-6 text-center text-gray-400">
+        ไม่มีข้อมูลวันเรียนชดเชย
+      </td>
+    </tr>
+  `;
+}
+
+function deleteSettingRow(type, row) {
+  Swal.fire({
+    title: "ยืนยันการลบ",
+    text: "ต้องการลบข้อมูลนี้ใช่หรือไม่",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#dc2626"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+    postAPI("deleteSettingRow", { type, row }, "ลบข้อมูลเรียบร้อย", loadAdminSettings);
+  });
+}
+
+function deleteMakeupDay(row) {
+  Swal.fire({
+    title: "ยืนยันการลบ",
+    text: "ต้องการลบวันเรียนชดเชยนี้ใช่หรือไม่",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#dc2626"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+    postAPI("deleteMakeupDay", { row }, "ลบข้อมูลเรียบร้อย", loadAdminSettings);
+  });
+}
+
+function editHoliday(row) {
+  Swal.fire({
+    title: "",
+    width: 560,
+    padding: "0",
+    background: "transparent",
+    showConfirmButton: false,
+    html: `
+      <div class="bg-white rounded-[28px] overflow-hidden shadow-2xl text-left">
+        <div class="bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white px-6 py-5">
+          <div class="text-2xl font-bold">แก้ไขวันหยุด</div>
+          <div class="text-sm opacity-90 mt-1">${row.start} - ${row.end || row.start}</div>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="label">วันที่เริ่ม</label>
+              <input id="editHolidayStart" type="date" class="input" value="${row.start}">
+            </div>
+
+            <div>
+              <label class="label">วันที่สิ้นสุด</label>
+              <input id="editHolidayEnd" type="date" class="input" value="${row.end || row.start}">
+            </div>
+          </div>
+
+          <div>
+            <label class="label">ประเภทวันหยุด</label>
+            <select id="editHolidayType" class="input">
+              ${getHolidayTypeOptions(row.type)}
+            </select>
+          </div>
+
+          <div>
+            <label class="label">รายการ</label>
+            <select id="editHolidayName" class="input">
+              ${getHolidayNameSelectOptions(row.name)}
+            </select>
+          </div>
+
+          <div>
+            <label class="label">หมายเหตุ</label>
+            <input id="editHolidayNote" class="input" value="${row.note || ""}" placeholder="เพิ่มเติม (ถ้ามี)">
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button onclick="Swal.close()"
+              class="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200">
+              ยกเลิก
+            </button>
+
+            <button onclick="submitEditHoliday(${row.row})"
+              class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-violet-700 to-fuchsia-600 text-white font-bold shadow hover:scale-[1.02] transition">
+              บันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  });
+}
+
+function submitEditHoliday(row) {
+  const data = {
+    row: row,
+    start: document.getElementById("editHolidayStart").value,
+    end: document.getElementById("editHolidayEnd").value || document.getElementById("editHolidayStart").value,
+    type: document.getElementById("editHolidayType").value,
+    name: document.getElementById("editHolidayName").value,
+    note: document.getElementById("editHolidayNote").value.trim()
+  };
+
+  if (!data.start || !data.type || !data.name) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่เริ่ม ประเภท และรายการวันหยุด", "warning");
+    return;
+  }
+
+  Swal.close();
+
+  postAPI(
+    "saveHolidaySetting",
+    { data },
+    "แก้ไขวันหยุดเรียบร้อยแล้ว",
+    loadAdminSettings
+  );
+}
+
+function getHolidayTypeOptions(selected) {
+  const types = [
+    "วันหยุดราชการ",
+    "วันหยุดนักขัตฤกษ์",
+    "วันหยุดชดเชย",
+    "วันหยุดพิเศษ",
+    "หยุดตามประกาศจังหวัด",
+    "หยุดตามประกาศโรงเรียน",
+    "หยุดกรณีพิเศษ",
+    "กิจกรรมโรงเรียน",
+    "สอบ",
+    "ปิดเรียนชั่วคราว",
+    "ภัยพิบัติ / เหตุฉุกเฉิน",
+    "อื่น ๆ"
+  ];
+
+  return `
+    <option value="">เลือกประเภท</option>
+    ${types.map(type => `
+      <option value="${type}" ${type === selected ? "selected" : ""}>${type}</option>
+    `).join("")}
+  `;
+}
+
+function getHolidayNameSelectOptions(selected) {
+  const names = [
+    "วันจักรี",
+    "วันฉัตรมงคล",
+    "วันเฉลิมพระชนมพรรษา",
+    "วันแม่แห่งชาติ",
+    "วันพ่อแห่งชาติ",
+    "วันรัฐธรรมนูญ",
+    "วันแรงงานแห่งชาติ",
+    "วันมาฆบูชา",
+    "วันวิสาขบูชา",
+    "วันอาสาฬหบูชา",
+    "วันเข้าพรรษา",
+    "วันออกพรรษา",
+    "ชดเชยวันปีใหม่",
+    "ชดเชยวันสงกรานต์",
+    "ชดเชยวันแรงงาน",
+    "ชดเชยวันเฉลิมพระชนมพรรษา",
+    "หยุดหลังสอบกลางภาค",
+    "หยุดเตรียมสถานที่",
+    "หยุดกิจกรรมภายใน",
+    "หยุด Big Cleaning Day",
+    "กีฬาสี",
+    "ค่ายลูกเสือ",
+    "ทัศนศึกษา",
+    "อบรมคุณธรรม",
+    "กิจกรรมวันสำคัญ",
+    "ประชุมผู้ปกครอง",
+    "สอบกลางภาค",
+    "สอบปลายภาค",
+    "สอบ RT",
+    "สอบ NT",
+    "สอบ O-NET",
+    "ฝนตกหนัก",
+    "น้ำท่วม",
+    "หมอกควัน",
+    "แผ่นดินไหว",
+    "โรคระบาด",
+    "ไฟฟ้าดับ",
+    "อื่น ๆ"
+  ];
+
+  return `
+    <option value="">เลือกรายการ</option>
+    ${names.map(name => `
+      <option value="${name}" ${name === selected ? "selected" : ""}>${name}</option>
+    `).join("")}
+  `;
+}
+
+function logoutAdmin() {
+  Swal.fire({
+    title: "ออกจากระบบ?",
+    text: "ต้องการออกจากระบบผู้ดูแลใช่หรือไม่",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "ออกจากระบบ",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#dc2626"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    sessionStorage.removeItem("admin_login");
+    sessionStorage.removeItem("admin_user");
+
+    window.location.href = "login.html";
+  });
+}
+
 </script>
 
 </body>
