@@ -404,6 +404,128 @@ function generateDutyPDFByDate(date) {
     Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
   });
 }
+
+function openEditDutyModal(row) {
+  Swal.fire({
+    title: "แก้ไขบันทึกครูเวร",
+    width: 800,
+    html: `
+      <div class="text-left space-y-3">
+        <label class="font-bold text-violet-800">วันที่</label>
+        <input id="editDutyDate" type="date" class="input" value="${row.date || ""}">
+
+        <label class="font-bold text-violet-800">บันทึกครูเวร</label>
+        <select id="editDutyNote" class="input">
+          ${getDutyOptionsHtml(row.dutyNote)}
+        </select>
+
+        <label class="font-bold text-violet-800">เพิ่มเติม</label>
+        <textarea id="editExtraNote" rows="5" class="input">${row.extraNote || ""}</textarea>
+
+        <label class="font-bold text-violet-800">ชื่อครูเวร</label>
+        <input id="editTeacherName" class="input" value="${row.teacherName || ""}">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "บันทึกการแก้ไข",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#7c3aed",
+    preConfirm: () => {
+      return {
+        row: row.row,
+        date: document.getElementById("editDutyDate").value,
+        dutyNote: document.getElementById("editDutyNote").value,
+        extraNote: document.getElementById("editExtraNote").value.trim(),
+        teacherName: document.getElementById("editTeacherName").value.trim()
+      };
+    }
+  }).then(result => {
+    if (!result.isConfirmed) return;
+    updateDuty(result.value);
+  });
+}
+
+function getDutyOptionsHtml(selected) {
+  const options = [
+    "การปฏิบัติหน้าที่เวรประจำวันเป็นไปด้วยความเรียบร้อย นักเรียนมาเรียนและเข้าร่วมกิจกรรมตามปกติ ไม่พบเหตุการณ์ผิดปกติ",
+    "การปฏิบัติหน้าที่เวรประจำวันเป็นไปด้วยความเรียบร้อย มีการดูแลความปลอดภัยของนักเรียนบริเวณหน้าโรงเรียน อาคารเรียน และพื้นที่ส่วนกลาง",
+    "มีนักเรียนเจ็บป่วยหรือเกิดเหตุระหว่างวัน โปรดดูรายละเอียดในช่องเหตุการณ์เพิ่มเติม",
+    "พบเหตุการณ์ที่ควรบันทึกเพิ่มเติม โปรดดูรายละเอียดในช่องเหตุการณ์เพิ่มเติม",
+    "มีการจัดกิจกรรมพิเศษภายในโรงเรียน การดำเนินกิจกรรมเป็นไปด้วยความเรียบร้อย"
+  ];
+
+  return `
+    <option value="">เลือกข้อความสำเร็จรูป</option>
+    ${options.map(opt => `
+      <option value="${opt}" ${opt === selected ? "selected" : ""}>
+        ${opt}
+      </option>
+    `).join("")}
+  `;
+}
+
+function updateDuty(data) {
+  if (!data.date || !data.dutyNote || !data.teacherName) {
+    Swal.fire("กรอกข้อมูลไม่ครบ", "กรุณากรอกวันที่ บันทึกครูเวร และชื่อครูเวร", "warning");
+    return;
+  }
+
+  Swal.fire({
+    title: "กำลังแก้ไข...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  });
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateDutyLog",
+      data
+    })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (!res.success) throw new Error(res.message);
+
+    Swal.fire("สำเร็จ", res.message || "แก้ไขข้อมูลเรียบร้อยแล้ว", "success");
+    loadDutyHistory();
+  })
+  .catch(err => {
+    Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+  });
+}
+
+function deleteDuty(row) {
+  Swal.fire({
+    title: "ยืนยันการลบ?",
+    text: "เมื่อลบแล้วข้อมูลบันทึกครูเวรจะหายไปจากระบบ",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "ลบข้อมูล",
+    cancelButtonText: "ยกเลิก",
+    confirmButtonColor: "#dc2626"
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "deleteDutyLog",
+        row
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+
+      Swal.fire("ลบแล้ว", res.message || "ลบข้อมูลเรียบร้อยแล้ว", "success");
+      loadDutyHistory();
+    })
+    .catch(err => {
+      Swal.fire("เกิดข้อผิดพลาด", err.message, "error");
+    });
+  });
+}
 </script>
 
 </body>
