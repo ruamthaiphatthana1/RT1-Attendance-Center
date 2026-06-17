@@ -385,14 +385,19 @@
                         border-fuchsia-100
                     ">
 
-                        <h3 class="
-                            text-xl
-                            font-bold
-                            text-fuchsia-800
-                            mb-4
-                        ">
-                            จำนวนมาเรียน
-                        </h3>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <h3 class="text-xl font-bold text-fuchsia-800">
+                                จำนวนมาเรียน
+                            </h3>
+
+                            <button
+                                type="button"
+                                onclick="fillFullAttendance()"
+                                class="bg-gradient-to-r from-green-600 to-emerald-500 text-white px-4 py-2 rounded-xl font-bold shadow hover:scale-[1.02] transition"
+                            >
+                                ✅ มาเรียนครบ
+                            </button>
+                        </div>
 
                         <div class="grid md:grid-cols-2 gap-4">
 
@@ -883,6 +888,28 @@
     });
   });
 }
+
+
+function fillFullAttendance() {
+  const totalMale = parseInt(document.getElementById("totalMale").value) || 0;
+  const totalFemale = parseInt(document.getElementById("totalFemale").value) || 0;
+
+  if (totalMale === 0 && totalFemale === 0) {
+    Swal.fire(
+      "ยังไม่มีจำนวนนักเรียนทั้งหมด",
+      "กรุณาเลือกชั้นเรียน หรือกรอกจำนวนนักเรียนทั้งหมดก่อน",
+      "warning"
+    );
+    return;
+  }
+
+  document.getElementById("maleAttend").value = totalMale;
+  document.getElementById("femaleAttend").value = totalFemale;
+
+  calculateAbsent();
+}
+
+
 
 </script>
 
