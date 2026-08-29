@@ -119,6 +119,18 @@ function doPost(e) {
       });
     }
 
+    if (action === "updateAttendanceRecord") {
+      return jsonResponse(
+        updateAttendanceRecord(data.data)
+      );
+    }
+
+    if (action === "deleteAttendanceRecord") {
+      return jsonResponse(
+        deleteAttendanceRecord(data.data)
+      );
+    }
+
     return jsonResponse({
       success: false,
       message: "ไม่พบ action ที่ต้องการ: " + action
@@ -1661,74 +1673,111 @@ function getAttendanceHistoryForCheck(options) {
   const mode = options.mode;
   const month = options.month;
 
-  if (!grade) {
-    return [];
-  }
+  if (!grade) return [];
 
-  const ss = SpreadsheetApp.getActive();
-  const sh = ss.getSheetByName("บันทึกการมาเรียน");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_ATTENDANCE);
 
-  if (!sh) {
-    return [];
-  }
+  if (!sh || sh.getLastRow() < 2) return [];
 
-  const values = sh.getDataRange().getValues();
-  const headers = values.shift();
-
-  const colTimestamp = headers.indexOf("ประทับเวลา");
-  const colDate = headers.indexOf("วันที่");
-  const colGrade = headers.indexOf("ระดับชั้น");
-
-  const colMaleTotal = headers.indexOf("ชาย (ทั้งหมด)");
-  const colFemaleTotal = headers.indexOf("หญิง (ทั้งหมด)");
-
-  const colMaleCome = findHeaderIndex(headers, [
-    "ชายมา",
-    "ชาย (มาเรียน)",
-    "ชายมาเรียน"
-  ]);
-
-  const colFemaleCome = findHeaderIndex(headers, [
-    "หญิงมา",
-    "หญิง (มาเรียน)",
-    "หญิงมาเรียน"
-  ]);
-
-  const colTotalCome = findHeaderIndex(headers, [
-    "รวมมา",
-    "รวมมาเรียน"
-  ]);
-
+  const data = sh.getRange(2, 1, sh.getLastRow() - 1, 8).getValues();
   const range = getCheckDateRange_(mode, month);
 
-  return values
-    .filter(row => {
-      const rowGrade = String(row[colGrade] || "").trim();
-      const rowDate = normalizeDate_(row[colDate]);
+  return data
+    .map((row, index) => ({
+      rowNumber: index + 2,
+      row: row
+    }))
+    .filter(item => {
+      const row = item.row;
+      const rowDate = normalizeDate_(row[0]);
+      const rowGrade = String(row[1] || "").trim();
 
       return rowGrade === grade &&
              rowDate >= range.start &&
              rowDate <= range.end;
     })
-    .sort((a, b) => normalizeDate_(a[colDate]) > normalizeDate_(b[colDate]) ? 1 : -1)
-    .map(row => {
-      const maleTotal = colMaleTotal >= 0 ? Number(row[colMaleTotal]) || 0 : "";
-      const femaleTotal = colFemaleTotal >= 0 ? Number(row[colFemaleTotal]) || 0 : "";
-
-      const maleCome = colMaleCome >= 0 ? Number(row[colMaleCome]) || 0 : 0;
-      const femaleCome = colFemaleCome >= 0 ? Number(row[colFemaleCome]) || 0 : 0;
-      const totalCome = colTotalCome >= 0 ? Number(row[colTotalCome]) || 0 : maleCome + femaleCome;
+    .sort((a, b) => normalizeDate_(a.row[0]) > normalizeDate_(b.row[0]) ? 1 : -1)
+    .map(item => {
+      const row = item.row;
 
       return {
-        dateText: formatDateThai_(row[colDate]),
-        grade: row[colGrade],
-        maleTotal: maleTotal,
-        femaleTotal: femaleTotal,
-        maleCome: maleCome,
-        femaleCome: femaleCome,
-        totalCome: totalCome
+        recordId: item.rowNumber,
+        dateText: formatDateThai_(row[0]),
+        grade: row[1],
+        maleTotal: Number(row[2]) || 0,
+        femaleTotal: Number(row[3]) || 0,
+        totalStudent: Number(row[4]) || 0,
+        maleCome: Number(row[5]) || 0,
+        femaleCome: Number(row[6]) || 0,
+        totalCome: Number(row[7]) || 0
       };
     });
+}
+
+function updateAttendanceRecord(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_ATTENDANCE);
+
+  if (!sh) {
+    return {
+      success: false,
+      message: "ไม่พบชีตบันทึกการมาเรียน"
+    };
+  }
+
+  const row = Number(data.recordId);
+
+  if (!row || row <= 1) {
+    return {
+      success: false,
+      message: "ไม่พบแถวข้อมูลที่ต้องการแก้ไข"
+    };
+  }
+
+  const maleTotal = Number(data.maleTotal) || 0;
+  const femaleTotal = Number(data.femaleTotal) || 0;
+  const totalStudent = maleTotal + femaleTotal;
+
+  const maleCome = Number(data.maleCome) || 0;
+  const femaleCome = Number(data.femaleCome) || 0;
+  const totalCome = maleCome + femaleCome;
+
+  if (maleCome > maleTotal) {
+    return {
+      success: false,
+      message: "ชายมา ต้องไม่มากกว่าชายทั้งหมด"
+    };
+  }
+
+  if (femaleCome > femaleTotal) {
+    return {
+      success: false,
+      message: "หญิงมา ต้องไม่มากกว่าหญิงทั้งหมด"
+    };
+  }
+
+  // โครงชีตบันทึกการมาเรียน:
+  // A วันที่
+  // B ระดับชั้น
+  // C ชายทั้งหมด
+  // D หญิงทั้งหมด
+  // E รวมทั้งหมด
+  // F ชายมา
+  // G หญิงมา
+  // H รวมมา
+
+  sh.getRange(row, 3).setValue(maleTotal);
+  sh.getRange(row, 4).setValue(femaleTotal);
+  sh.getRange(row, 5).setValue(totalStudent);
+  sh.getRange(row, 6).setValue(maleCome);
+  sh.getRange(row, 7).setValue(femaleCome);
+  sh.getRange(row, 8).setValue(totalCome);
+
+  return {
+    success: true,
+    message: "แก้ไขข้อมูลเรียบร้อยแล้ว"
+  };
 }
 
 function findHeaderIndex(headers, names) {
@@ -1767,7 +1816,11 @@ function getCheckDateRange_(mode, month) {
     const m = Number(parts[1]);
 
     const lastDate = new Date(year, m, 0);
-    const end = Utilities.formatDate(lastDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    const end = Utilities.formatDate(
+      lastDate,
+      TIMEZONE,
+      "yyyy-MM-dd"
+    );
 
     return {
       start: start,
@@ -1775,10 +1828,42 @@ function getCheckDateRange_(mode, month) {
     };
   }
 
-  const term = getActiveTermInfo();
+  const term = getActiveTerm();
+
+  if (!term) {
+    throw new Error("ยังไม่ได้ตั้งค่าภาคเรียนที่มีสถานะใช้งาน");
+  }
 
   return {
-    start: term.start,
-    end: term.end
+    start: formatDateKey(term.startDate),
+    end: formatDateKey(term.endDate || getTodayOnly())
+  };
+}
+
+function deleteAttendanceRecord(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_ATTENDANCE);
+
+  if (!sh) {
+    return {
+      success: false,
+      message: "ไม่พบชีตบันทึกการมาเรียน"
+    };
+  }
+
+  const row = Number(data.recordId);
+
+  if (!row || row <= 1 || row > sh.getLastRow()) {
+    return {
+      success: false,
+      message: "ไม่พบแถวข้อมูลที่ต้องการลบ"
+    };
+  }
+
+  sh.deleteRow(row);
+
+  return {
+    success: true,
+    message: "ลบข้อมูลเรียบร้อยแล้ว"
   };
 }
